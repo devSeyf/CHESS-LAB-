@@ -1,3 +1,10 @@
+ 
+
+
+
+
+
+
 /* Reset and base */
 html, body {
   margin: 0;
@@ -288,4 +295,20 @@ h1 {
   background-color: #007bff;
   color: white;
   font-weight: bold;
+}
+
+
+
+.chess-board {
+  width: 100%;
+  max-width: 480px; /* الحجم الذي تريده */
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.board-section {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0;
+    width: 480px;
 }

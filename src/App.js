@@ -11,13 +11,28 @@ import {
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
 } from "chart.js";
 import "./App.css";
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 function App() {
+  const [username, setUsername] = useState(
+    localStorage.getItem("username") || ""
+  );
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    !!localStorage.getItem("username")
+  );
+
   const [fen, setFen] = useState("start");
   const [analysis, setAnalysis] = useState(null);
   const [game, setGame] = useState(null);
@@ -39,13 +54,20 @@ function App() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post("http://localhost:5000/analyze", { fen }, { timeout: 30000 });
+      const response = await axios.post(
+        "http://localhost:5000/analyze",
+        { fen },
+        { timeout: 30000 }
+      );
       const result = { ...response.data, mistakes: [], accuracy: "N/A" };
       setAnalysis(result);
       setMoveAnalysis([]);
       setCustomArrows([]);
       setMoveIndex(-1);
-      localStorage.setItem("lastAnalysis", JSON.stringify({ fen, analysis: result, moveAnalysis: [] }));
+      localStorage.setItem(
+        "lastAnalysis",
+        JSON.stringify({ fen, analysis: result, moveAnalysis: [] })
+      );
     } catch (error) {
       console.error("FEN analiz hatası:", error);
       setAnalysis({ error: "FEN analizi başarısız: " + error.message });
@@ -81,6 +103,10 @@ function App() {
     if (!game) {
       setAnalysis({ error: "Yüklü bir PGN oyunu yok" });
       return;
+
+
+
+
     }
 
     setIsLoading(true);
@@ -94,7 +120,11 @@ function App() {
 
       chess.reset();
       const initialFen = chess.fen();
-      const initialResponse = await axios.post("http://localhost:5000/analyze", { fen: initialFen }, { timeout: 30000 });
+      const initialResponse = await axios.post(
+        "http://localhost:5000/analyze",
+        { fen: initialFen },
+        { timeout: 30000 }
+      );
 
       moveEvaluations.push({
         fen: initialFen,
@@ -114,7 +144,11 @@ function App() {
         chess.move(move.san);
 
         const afterFen = chess.fen();
-        const afterResponse = await axios.post("http://localhost:5000/analyze", { fen: afterFen }, { timeout: 30000 });
+        const afterResponse = await axios.post(
+          "http://localhost:5000/analyze",
+          { fen: afterFen },
+          { timeout: 30000 }
+        );
 
         const afterEvaluation = afterResponse.data.evaluation;
         const bestMove = afterResponse.data.bestMove;
@@ -177,11 +211,12 @@ function App() {
       setFen(moveEvaluations[1]?.fen || "start");
       const firstMove = moveEvaluations[1];
       if (firstMove?.mistake && firstMove.from && firstMove.to) {
-        setCustomArrows([[firstMove.from, firstMove.to, firstMove.mistakeColor || "red"]]);
+        setCustomArrows([
+          [firstMove.from, firstMove.to, firstMove.mistakeColor || "red"],
+        ]);
       } else {
         setCustomArrows([]);
-        }
-
+      }
 
       setAnalysis(finalAnalysis);
       setMoveIndex(moveEvaluations.length - 1);
@@ -189,14 +224,35 @@ function App() {
 
       const lastMove = moveEvaluations[moveEvaluations.length - 1];
       if (lastMove.mistake && lastMove.from && lastMove.to) {
-        setCustomArrows([[lastMove.from, lastMove.to, lastMove.mistakeColor || "red"]]);
+        setCustomArrows([
+          [lastMove.from, lastMove.to, lastMove.mistakeColor || "red"],
+        ]);
       }
 
-      localStorage.setItem("lastAnalysis", JSON.stringify({
-        fen: moveEvaluations[moveEvaluations.length - 1].fen,
-        analysis: finalAnalysis,
-        moveAnalysis: moveEvaluations,
-      }));
+      localStorage.setItem(
+        "lastAnalysis",
+        JSON.stringify({
+          fen: moveEvaluations[moveEvaluations.length - 1].fen,
+          analysis: finalAnalysis,
+          moveAnalysis: moveEvaluations,
+        })
+      );
+          const allUserData = JSON.parse(localStorage.getItem("userAnalyses") || "{}");
+
+          allUserData[username] = allUserData[username] || [];
+          allUserData[username].push({
+            date: new Date().toLocaleString(),
+            analysis: finalAnalysis,
+            moveAnalysis: moveEvaluations,
+          });
+
+          localStorage.setItem("userAnalyses", JSON.stringify(allUserData));
+
+
+
+
+
+
     } catch (error) {
       console.error("PGN analiz hatası:", error);
       setAnalysis({ error: "PGN analizi başarısız: " + error.message });
@@ -218,7 +274,9 @@ function App() {
         mistakes: analysis.mistakes || [],
       });
       if (currentMove.mistake && currentMove.from && currentMove.to) {
-        setCustomArrows([[currentMove.from, currentMove.to, currentMove.mistakeColor || "red"]]);
+        setCustomArrows([
+          [currentMove.from, currentMove.to, currentMove.mistakeColor || "red"],
+        ]);
       } else {
         setCustomArrows([]);
       }
@@ -238,7 +296,9 @@ function App() {
         mistakes: analysis.mistakes || [],
       });
       if (currentMove.mistake && currentMove.from && currentMove.to) {
-        setCustomArrows([[currentMove.from, currentMove.to, currentMove.mistakeColor || "red"]]);
+        setCustomArrows([
+          [currentMove.from, currentMove.to, currentMove.mistakeColor || "red"],
+        ]);
       } else {
         setCustomArrows([]);
       }
@@ -249,6 +309,29 @@ function App() {
       setCustomArrows([]);
     }
   };
+  const handleLoadSavedAnalyses = () => {
+  const allUserData = JSON.parse(localStorage.getItem("userAnalyses") || "{}");
+  const userData = allUserData[username];
+
+  if (!userData || userData.length === 0) {
+    alert("Bu kullanıcıya ait kayıtlı analiz bulunamadı.");
+    return;
+  }
+
+  const last = userData[userData.length - 1]; // son analiz
+  setAnalysis(last.analysis);
+  setMoveAnalysis(last.moveAnalysis);
+  setMoveIndex(last.moveAnalysis.length - 1);
+  setFen(last.moveAnalysis[last.moveAnalysis.length - 1].fen);
+
+  const lastMove = last.moveAnalysis[last.moveAnalysis.length - 1];
+  if (lastMove.from && lastMove.to) {
+    setCustomArrows([[lastMove.from, lastMove.to, lastMove.mistakeColor || "red"]]);
+  } else {
+    setCustomArrows([]);
+  }
+};
+
 
   const handleDownloadAnalysis = () => {
     const data = {
@@ -256,7 +339,9 @@ function App() {
       mistakes: analysis?.mistakes || [],
       evaluations: moveAnalysis,
     };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -264,21 +349,23 @@ function App() {
     a.click();
     URL.revokeObjectURL(url);
   };
-const handleExplainMistake = (move) => {
-  let explanation = "";
+  const handleExplainMistake = (move) => {
+    let explanation = "";
 
-  if (!move || !move.mistake) {
-    explanation = "Bu hamle hakkında özel bir açıklama bulunamadı.";
-  } else if (move.mistakeColor === "red") {
-    explanation = "Bu ciddi bir hata. Genellikle taş kaybı, mat tehdidi ya da büyük stratejik kayıplar içerir.";
-  } else if (move.mistakeColor === "yellow") {
-    explanation = "Bu hamle daha iyi bir alternatifin kaçırıldığını gösterir. Konumsal olarak zayıf veya pasif olabilir.";
-  } else if (move.mistakeColor === "green") {
-    explanation = "Tebrikler! Bu çok doğru ve etkili bir hamle.";
-  }
+    if (!move || !move.mistake) {
+      explanation = "Bu hamle hakkında özel bir açıklama bulunamadı.";
+    } else if (move.mistakeColor === "red") {
+      explanation =
+        "Bu ciddi bir hata. Genellikle taş kaybı, mat tehdidi ya da büyük stratejik kayıplar içerir.";
+    } else if (move.mistakeColor === "yellow") {
+      explanation =
+        "Bu hamle daha iyi bir alternatifin kaçırıldığını gösterir. Konumsal olarak zayıf veya pasif olabilir.";
+    } else if (move.mistakeColor === "green") {
+      explanation = "Tebrikler! Bu çok doğru ve etkili bir hamle.";
+    }
 
-  alert(explanation);
-};
+    alert(explanation);
+  };
 
   const handleLoadLastAnalysis = () => {
     const saved = localStorage.getItem("lastAnalysis");
@@ -291,7 +378,9 @@ const handleExplainMistake = (move) => {
       setMoveIndex(moveAnalysis.length - 1);
       const lastMove = moveAnalysis[moveAnalysis.length - 1];
       if (lastMove.mistake && lastMove.from && lastMove.to) {
-        setCustomArrows([[lastMove.from, lastMove.to, lastMove.mistakeColor || "red"]]);
+        setCustomArrows([
+          [lastMove.from, lastMove.to, lastMove.mistakeColor || "red"],
+        ]);
       } else {
         setCustomArrows([]);
       }
@@ -301,7 +390,9 @@ const handleExplainMistake = (move) => {
   };
 
   const chartData = {
-    labels: moveAnalysis.map((_, index) => (index === 0 ? "Start" : `Move ${index}`)),
+    labels: moveAnalysis.map((_, index) =>
+      index === 0 ? "Start" : `Move ${index}`
+    ),
     datasets: [
       {
         label: "Evaluation",
@@ -321,188 +412,257 @@ const handleExplainMistake = (move) => {
       title: { display: true, text: "Evaluation Over Game" },
     },
     scales: {
-      y: { title: { display: true, text: "Evaluation" }, suggestedMin: -2, suggestedMax: 2 },
+      y: {
+        title: { display: true, text: "Evaluation" },
+        suggestedMin: -2,
+        suggestedMax: 2,
+      },
       x: { title: { display: true, text: "Move" } },
     },
   };
 
-
-return (
-  <div className="app-wrapper">
-    <div className="card">
-      <header className="header">
-        <span className="logo">♟️</span>
-        <h1>Chess Lab</h1>
-        <p className="subtitle">Satranç analizine hoş geldiniz!</p>
-      </header>
-
-      {isLoading && (
-        <div className="loading">
-          <p>Analiz ediliyor... Lütfen bekleyin</p>
-        </div>
-      )}
-
-      <div className="tabs">
+  if (!isLoggedIn) {
+    return (
+      <div className="login-screen">
+        <h2>Satranç Lab'a Hoş Geldin!</h2>
+        <input
+          type="text"
+          placeholder="Adınızı giriniz..."
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
         <button
-          className={activeTab === "grafik" ? "tab active" : "tab"}
-          onClick={() => setActiveTab("grafik")}
+          onClick={() => {
+            if (username.trim()) {
+              localStorage.setItem("username", username.trim());
+              setIsLoggedIn(true);
+            }
+          }}
         >
-          📈 Grafik
-        </button>
-        <button
-          className={activeTab === "analiz" ? "tab active" : "tab"}
-          onClick={() => setActiveTab("analiz")}
-        >
-          📋 Analiz
+          Giriş Yap
         </button>
       </div>
+    );
+  }
 
-      <div className="main-content">
-        {activeTab === "grafik" && moveAnalysis.length > 0 && (
-          <div className="board-container">
-            <div className="chart-section">
-              <Line data={chartData} options={chartOptions} />
-            </div>
+  return (
+    <div className="app-wrapper">
+      <div className="card">
+        <header className="header">
+          <span className="logo">♟️</span>
+          <h1>Chess Lab</h1>
+          <p className="subtitle">Satranç analizine hoş geldiniz!</p>
+        </header>
+        <p>
+          👤 Kullanıcı: <strong>{username}</strong>
+        </p>
+
+        {isLoading && (
+          <div className="loading">
+            <p>Analiz ediliyor... Lütfen bekleyin</p>
           </div>
         )}
 
-        {activeTab === "analiz" && (
-          <div className="sidebar">
-            {/* ♟️ Tahta */}
-            <div
-              className="board-section"
-              style={{
-                border: "2px solid #ddd",
-                borderRadius: "12px",
-                overflow: "hidden",
-              }}
-            >
-              <Chessboard position={fen} customArrows={customArrows} />
-            </div>
+        <div className="tabs">
+          <button
+            className={activeTab === "grafik" ? "tab active" : "tab"}
+            onClick={() => setActiveTab("grafik")}
+          >
+            📈 Grafik
+          </button>
+          <button
+            className={activeTab === "analiz" ? "tab active" : "tab"}
+            onClick={() => setActiveTab("analiz")}
+          >
+            📋 Analiz
+          </button>
+        </div>
 
-            {/* 🎯 FEN Analiz */}
-            <div className="input-group">
-              <input
-                type="text"
-                value={fen}
-                onChange={(e) => setFen(e.target.value)}
-                placeholder="FEN konumu giriniz..."
-              />
-              <button onClick={handleAnalyzeFen} disabled={isLoading}>
-                Analiz Et (FEN)
-              </button>
+        <div className="main-content">
+          {activeTab === "grafik" && moveAnalysis.length > 0 && (
+            <div className="board-container">
+              <div className="chart-section">
+                <Line data={chartData} options={chartOptions} />
+              </div>
             </div>
+          )}
 
-            {/* 📂 PGN Dosyası */}
-            <div className="input-group">
-              <label htmlFor="pgn-upload">PGN Dosyası Yükle:</label>
-              <div className="file-input-group">
-                <input
-                  type="file"
-                  id="pgn-upload"
-                  accept=".pgn"
-                  onChange={handlePgnUpload}
+          {activeTab === "analiz" && (
+            <div className="sidebar">
+              {/* ♟️ Tahta */}
+              <div
+                className="board-section"
+                style={{
+                  border: "2px solid #ddd",
+                  borderRadius: "12px",
+                  overflow: "hidden",
+                }}
+              >
+                <Chessboard
+                  position={fen}
+                  customArrows={customArrows}
+                  className="chess-board"
                 />
-                <button onClick={handleAnalyzePgn} disabled={!game || isLoading}>
-                  Analiz Et (PGN)
+              </div>
+
+              {/* 🎯 FEN Analiz */}
+              <div className="input-group">
+                <input
+                  type="text"
+                  value={fen}
+                  onChange={(e) => setFen(e.target.value)}
+                  placeholder="FEN konumu giriniz..."
+                />
+                <button onClick={handleAnalyzeFen} disabled={isLoading}>
+                  Analiz Et (FEN)
                 </button>
               </div>
-            </div>
 
-            {/* 🔄 Navigasyon */}
-            <div className="input-group navigation-buttons">
-              <button onClick={handlePrevMove} disabled={moveIndex === -1}>
-                ◀️ Önceki Hamle
-              </button>
-              <button
-                onClick={handleNextMove}
-                disabled={moveIndex === moveAnalysis.length - 1}
-              >
-                Sonraki Hamle ▶️
-              </button>
-            </div>
-
-            {/* 💡 İpucu */}
-            <p className="hint">
-              Örnek: <code>rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1</code>
-            </p>
-
-            {/* 📋 Analiz Sonuçları */}
-            {analysis && (
-              <div className="analysis-result">
-                <h3>Analiz Sonuçları:</h3>
-                {analysis.error ? (
-                  <p className="error">{analysis.error}</p>
-                ) : (
-                  <ul>
-                    <li><strong>Değerlendirme:</strong> {analysis.evaluation}</li>
-                    <li><strong>En İyi Hamle:</strong> {analysis.bestMove}</li>
-                    <li><strong>Doğruluk:</strong> {analysis.accuracy}</li>
-                    <li>
-                      <strong>Hatalar:</strong>{" "}
-                      {analysis.mistakes.length
-                        ? analysis.mistakes.join(", ")
-                        : "Yok"}
-                    </li>
-
-                    {moveIndex >= 0 && moveAnalysis[moveIndex] && (
-                      <div className="current-move-info">
-                        <p>
-                          <strong>Hamle:</strong> {moveAnalysis[moveIndex].move} ({moveIndex}. hamle)
-                        </p>
-
-                        {moveAnalysis[moveIndex].mistake && (
-                          <>
-                            <p>
-                              <strong>Analiz:</strong> {moveAnalysis[moveIndex].mistake}
-                            </p>
-                            <p>
-                              <strong>Öneri:</strong> {moveAnalysis[moveIndex].suggestion}
-                            </p>
-                            <button
-                              onClick={() => handleExplainMistake(moveAnalysis[moveIndex])}
-                              className="learn-button"
-                            >
-                              Öğren
-                            </button>
-                            <div className="eval-bar-wrapper">
-                              <div
-                                className="eval-bar"
-                                style={{
-                                  width: `${Math.min(
-                                    Math.abs(moveAnalysis[moveIndex].evaluation) * 50,
-                                    100
-                                  )}%`,
-                                  backgroundColor:
-                                    moveAnalysis[moveIndex].mistakeColor === "red"
-                                      ? "#ef5350"
-                                      : moveAnalysis[moveIndex].mistakeColor === "yellow"
-                                      ? "#ffeb3b"
-                                      : "#81c784",
-                                }}
-                              ></div>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </ul>
-                )}
+              {/* 📂 PGN Dosyası */}
+              <div className="input-group">
+                <label htmlFor="pgn-upload">PGN Dosyası Yükle:</label>
+                <div className="file-input-group">
+                  <input
+                    type="file"
+                    id="pgn-upload"
+                    accept=".pgn"
+                    onChange={handlePgnUpload}
+                  />
+                  <button
+                    onClick={handleAnalyzePgn}
+                    disabled={!game || isLoading}
+                  >
+                    Analiz Et (PGN)
+                  </button>
+                </div>
               </div>
-            )}
 
-            {/* 💾 Ekstra */}
-            <button onClick={handleLoadLastAnalysis}>Son Analizi Yükle</button>
-            {moveAnalysis.length > 0 && (
-              <button onClick={handleDownloadAnalysis}>Analizi İndir (JSON)</button>
-            )}
-          </div>
-        )}
+              {/* 🔄 Navigasyon */}
+              <div className="input-group navigation-buttons">
+                <button onClick={handlePrevMove} disabled={moveIndex === -1}>
+                  ◀️ Önceki Hamle
+                </button>
+                <button
+                  onClick={handleNextMove}
+                  disabled={moveIndex === moveAnalysis.length - 1}
+                >
+                  Sonraki Hamle ▶️
+                </button>
+              </div>
+
+              {/* 💡 İpucu */}
+              <p className="hint">
+                Örnek:{" "}
+                <code>
+                  rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+                </code>
+              </p>
+
+              {/* 📋 Analiz Sonuçları */}
+              {analysis && (
+                <div className="analysis-result">
+                  <h3>Analiz Sonuçları:</h3>
+                  {analysis.error ? (
+                    <p className="error">{analysis.error}</p>
+                  ) : (
+                    <ul>
+                      <li>
+                        <strong>Değerlendirme:</strong> {analysis.evaluation}
+                      </li>
+                      <li>
+                        <strong>En İyi Hamle:</strong> {analysis.bestMove}
+                      </li>
+                      <li>
+                        <strong>Doğruluk:</strong> {analysis.accuracy}
+                      </li>
+                      <li>
+                        <strong>Hatalar:</strong>{" "}
+                        {analysis.mistakes.length
+                          ? analysis.mistakes.join(", ")
+                          : "Yok"}
+                      </li>
+
+                      {moveIndex >= 0 && moveAnalysis[moveIndex] && (
+                        <div className="current-move-info">
+                          <p>
+                            <strong>Hamle:</strong>{" "}
+                            {moveAnalysis[moveIndex].move} ({moveIndex}. hamle)
+                          </p>
+
+                          {moveAnalysis[moveIndex].mistake && (
+                            <>
+                              <p>
+                                <strong>Analiz:</strong>{" "}
+                                {moveAnalysis[moveIndex].mistake}
+                              </p>
+                              <p>
+                                <strong>Öneri:</strong>{" "}
+                                {moveAnalysis[moveIndex].suggestion}
+                              </p>
+                              <button
+                                onClick={() =>
+                                  handleExplainMistake(moveAnalysis[moveIndex])
+                                }
+                                className="learn-button"
+                              >
+                                Öğren
+                              </button>
+                              <div className="eval-bar-wrapper">
+                                <div
+                                  className="eval-bar"
+                                  style={{
+                                    width: `${Math.min(
+                                      Math.abs(
+                                        moveAnalysis[moveIndex].evaluation
+                                      ) * 50,
+                                      100
+                                    )}%`,
+                                    backgroundColor:
+                                      moveAnalysis[moveIndex].mistakeColor ===
+                                      "red"
+                                        ? "#ef5350"
+                                        : moveAnalysis[moveIndex]
+                                            .mistakeColor === "yellow"
+                                        ? "#ffeb3b"
+                                        : "#81c784",
+                                  }}
+                                ></div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </ul>
+                  )}
+                </div>
+              )}
+
+              {/* 💾 Ekstra */}
+              <button onClick={handleLoadLastAnalysis}>
+                Son Analizi Yükle
+              </button>
+              <button onClick={handleLoadSavedAnalyses}>Kayıtlı Analizleri Göster</button>
+
+              {moveAnalysis.length > 0 && (
+                <button onClick={handleDownloadAnalysis}>
+                  Analizi İndir (JSON)
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  localStorage.removeItem("username");
+                  setUsername("");
+                  setIsLoggedIn(false);
+                }}
+              >
+                Çıkış Yap
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
-  </div>
-);
-
+  );
 }
 
 export default App;
