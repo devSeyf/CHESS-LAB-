@@ -1,0 +1,55 @@
+{
+  "name": "node-uci",
+  "version": "1.3.4",
+  "description": "Universal Chess Interface protocol implementation for node.js",
+  "main": "lib/index.js",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "jest",
+    "test:watch": "yarn test --watch",
+    "test:coverage": "yarn test --coverage",
+    "pretest:ci": "yarn lint && yarn build",
+    "test:ci": "yarn test:coverage && cat coverage/lcov.info | codeclimate-test-reporter",
+    "build": "rimraf lib && cross-env NODE_ENV=production rollup -c",
+    "docs": "rimraf docs && documentation build src/index.js -f html -o docs -g",
+    "docs:watch": "documentation serve src/index.js -f html -g --watch src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ebemunk/node-uci"
+  },
+  "keywords": [
+    "universal chess interface",
+    "uci",
+    "chess",
+    "engine"
+  ],
+  "author": "ebemunk",
+  "license": "MIT",
+  "dependencies": {
+    "bluebird": "3.7.2",
+    "core-js": "3.6.2",
+    "debug": "4.1.1",
+    "lodash": "4.17.15",
+    "rollup-plugin-terser": "5.1.3"
+  },
+  "devDependencies": {
+    "@babel/core": "7.7.7",
+    "@babel/plugin-proposal-export-default-from": "7.7.4",
+    "@babel/plugin-proposal-function-bind": "7.7.4",
+    "@babel/preset-env": "7.7.7",
+    "@rollup/plugin-commonjs": "11.0.1",
+    "@rollup/plugin-node-resolve": "7.0.0",
+    "babel-eslint": "10.0.3",
+    "codeclimate-test-reporter": "0.5.1",
+    "cross-env": "6.0.3",
+    "documentation": "12.1.4",
+    "eslint": "6.8.0",
+    "eslint-config-prettier": "6.9.0",
+    "jest": "24.9.0",
+    "prettier": "1.19.1",
+    "rimraf": "3.0.0",
+    "rollup": "1.28.0",
+    "rollup-plugin-babel": "4.3.3"
+  }
+}
