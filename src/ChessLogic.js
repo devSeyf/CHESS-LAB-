@@ -117,7 +117,6 @@ function ChessLogic({
       let totalScoreDiff = 0;
       let moveCount = 0;
 
-      // Initialize progress
       setAnalysisProgress({ current: 0, total: moves.length + 1 });
       console.log(`Starting analysis for ${moves.length} moves...`);
 
@@ -420,6 +419,25 @@ function ChessLogic({
     }
   };
 
+  const handleMoveSelect = (index) => {
+    const selectedMove = moveAnalysis[index];
+    setMoveIndex(index);
+    setFen(selectedMove.fen);
+    setAnalysis({
+      evaluation: selectedMove.evaluation,
+      bestMove: selectedMove.bestMove,
+      accuracy: analysis.accuracy,
+      mistakes: analysis.mistakes || [],
+    });
+    if (selectedMove.mistake && selectedMove.from && selectedMove.to) {
+      setCustomArrows([
+        [selectedMove.from, selectedMove.to, selectedMove.mistakeColor || "red"],
+      ]);
+    } else {
+      setCustomArrows([]);
+    }
+  };
+
   return (
     <div className="container-fluid h-100">
       <div className="row h-100">
@@ -461,6 +479,7 @@ function ChessLogic({
             moveIndex={moveIndex}
             moveAnalysis={moveAnalysis}
             handleExplainMistake={handleExplainMistake}
+            handleMoveSelect={handleMoveSelect}
           />
         </div>
       </div>
