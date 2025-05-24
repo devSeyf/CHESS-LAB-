@@ -1,49 +1,144 @@
-body {
-  background-color: #f4f6f8;
-  font-family: 'Segoe UI', sans-serif;
+/* خلفية الصفحة والنص */
+html, body, #root {
+  height: 100%;
   margin: 0;
   padding: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #131111;
+  color: #f0f0f0;
+  overflow: hidden;
 }
 
-.sidebar, .analysis-panel {
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-  padding: 20px;
+/* الشريط الجانبي ولوحة التحليل */
+.sidebar,
+.analysis-panel {
+  background-color: #1b1b1b;
+  color: #f0f0f0;
   height: 100vh;
   overflow-y: auto;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
-.sidebar h5, .analysis-panel h5 {
+
+.sidebar {
+  background-color: #131111;
+  padding: 30px 25px;
+  height: 100vh;
+  border-right: 1px solid #222;
+  color: #f0f0f0;
+  text-align: left;
+}
+.sidebar img {
+  width: 60px;
+  margin-bottom: 10px;
+}
+.sidebar h4 {
+  font-size: 24px;
+  font-weight: 500;
+  color: #dddddd;
+  margin-bottom: 25px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+  position: relative;
+}
+
+.sidebar h4::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  transform: translateX(-50%);
+  width: 40%;
+  height: 2px;
+  background-color: #444;
+  border-radius: 2px;
+}
+
+.sidebar .btn {
+  background-color: #1f1f1f !important;
+  color: #f0f0f0 !important;
+  border: none !important;
+  border-radius: 6px !important;
+  font-size: 0.95rem;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  transition: 0.2s;
+}
+
+.sidebar .btn:hover {
+  background-color: #2a2a2a !important;
+}
+
+.sidebar h5,
+.analysis-panel h5 {
   font-weight: bold;
   margin-bottom: 20px;
 }
 
-.btn {
-  border-radius: 8px !important;
-}
-
+/* رقعة الشطرنج */
 .chessboard-container {
+  background-color: #181818;
+  height: 100vh;
+  width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #fefefe;
   padding: 20px;
-  height: 100vh;
 }
 
+/* الأزرار */
+.btn {
+  border-radius: 8px !important;
+  color: #f0f0f0;
+  background-color: #333;
+  border: 1px solid #444;
+}
+
+.btn:hover {
+  background-color: #444;
+  border-color: #666;
+}
+
+/* أزرار التحكم الدائرية */
+.control-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #2a2a2a;
+  color: #f0f0f0;
+  border: 1px solid #555;
+  transition: 0.2s;
+}
+
+.control-btn:hover {
+  background-color: #3a3a3a;
+  border-color: #777;
+}
+
+/* إشعارات */
 .alert-light {
   border-radius: 12px;
   font-size: 0.95rem;
+  background-color: #2a2a2a;
+  color: #f0f0f0;
+  border: 1px solid #444;
 }
 
+/* الشريط التحليلي */
 .progress {
   height: 10px;
   border-radius: 5px;
   margin-top: 8px;
 }
 
-
+/* طبقة التحميل */
 .loading-overlay {
   position: fixed;
   top: 0;
@@ -51,7 +146,7 @@ body {
   width: 100vw;
   height: 100vh;
   backdrop-filter: blur(5px);
-  background-color: rgba(255, 255, 255, 0.4);
+  background-color: rgba(19, 17, 17, 0.7);
   z-index: 9999;
   display: flex;
   justify-content: center;
@@ -62,11 +157,11 @@ body {
 .loading-overlay span {
   margin-top: 10px;
   font-size: 1rem;
-  color: #333;
+  color: #f0f0f0;
   font-weight: 500;
 }
 
-
+/* حركات القطع */
 .square-pulse {
   animation: pulse 0.4s ease-in-out;
   box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.3);
@@ -86,6 +181,7 @@ body {
     box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.3);
   }
 }
+
 @keyframes pieceShake {
   0% { transform: translate(0, 0); }
   25% { transform: translate(2px, -2px); }
@@ -97,20 +193,203 @@ body {
 .square-shake {
   animation: pieceShake 0.3s ease-in-out;
 }
-.control-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  font-size: 1.2rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: #ffffff;
-  border: 1px solid #ccc;
-  transition: 0.2s;
+
+/* أزرار عامة مسطحة */
+.btn {
+  background-color: #2a2a2a !important;
+  color: #f0f0f0 !important;
+  border: 1px solid #555 !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
 }
 
-.control-btn:hover {
-  background-color: #f0f0f0;
-  border-color: #888;
+.btn:hover {
+  background-color: #3a3a3a !important;
+  border-color: #777 !important;
+}
+
+/* زر Sign up */
+.btn-success {
+  background-color: #1d8f3f;
+  border: none;
+}
+
+.btn-success:hover {
+  background-color: #28a745;
+}
+
+/* زر Login */
+.btn-outline-light {
+  background-color: transparent;
+  border: 1px solid #888;
+  color: #f0f0f0;
+}
+
+.btn-outline-light:hover {
+  background-color: #444;
+  border-color: #aaa;
+}
+ 
+
+.fen-input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.fen-input {
+  flex: 1;
+  background-color: #222;
+  color: #f0f0f0;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.95rem;
+}
+
+.fen-btn {
+  background-color: #333;
+  color: #f0f0f0;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: background-color 0.2s ease;
+}
+
+.fen-btn:hover {
+  background-color: #444;
+}
+
+.fen-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+
+.fen-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.fen-textarea {
+  width: 100%;
+  background-color: #1e1e1e;
+  color: #ffffff;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 0.95rem;
+  resize: none;
+}
+
+.fen-textarea::placeholder {
+  color: #888;
+}
+
+.fen-analyze-btn {
+  background-color: #333;
+  color: #f0f0f0;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.fen-analyze-btn:hover {
+  background-color: #444;
+}
+
+.fen-analyze-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+
+.fen-pgn-box {
+  background-color: #1e1e1e;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid #333;
+}
+
+.fen-pgn-label {
+  color: #f0f0f0;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.fen-pgn-textarea {
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  color: #fff;
+  border-radius: 6px;
+  padding: 10px;
+  resize: none;
+  font-size: 0.9rem;
+}
+
+.upload-section {
+  text-align: center;
+}
+
+.upload-btn {
+  background-color: #333;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.upload-btn:hover {
+  background-color: #444;
+}
+
+.analyze-btn {
+  background-color: #5d5d5d;
+  color: #fff;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.analyze-btn:hover {
+  background-color: #444;
+}
+
+.analyze-btn:disabled {
+  background-color: #333;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.import-game-btn {
+  display: inline-block;
+  width: 100%;
+  background-color: #2a2a2a;
+  color: #f0f0f0;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 1rem;
+  text-align: center;
+  border: 1px solid #444;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.import-game-btn:hover {
+  background-color: #3a3a3a;
+  border-color: #666;
 }
