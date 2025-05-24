@@ -417,6 +417,22 @@ html, body, #root {
   border-color: #777;
 }
 
+/* Speed selector */
+.speed-selector {
+  background-color: #2a2a2a;
+  color: #f0f0f0;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.speed-selector:hover {
+  background-color: #3a3a3a;
+  border-color: #777;
+}
+
 /* Alerts */
 .alert-light {
   border-radius: 12px;
@@ -556,20 +572,47 @@ html, body, #root {
   animation: fadeIn 2.5s ease-in-out;
 }
 
-.welcome-upload .upload-btn {
+/* Welcome Screen Buttons */
+.welcome-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.welcome-btn {
+  display: inline-block;
+  width: 100%;
   max-width: 250px;
   padding: 12px 24px;
   font-size: 1rem;
-  background-color: #2a2a2a;
-  border-color: #2a2a2a;
-  color: #ffffff;
+  border-radius: 6px;
+  text-align: center;
+  cursor: pointer;
   transition: background-color 0.3s ease, transform 0.3s ease;
   animation: fadeIn 3s ease-in-out;
 }
 
-.welcome-upload .upload-btn:hover {
-  background-color: #3a3a3a;
-  border-color: #3a3a3a;
+.welcome-btn-live {
+  background-color: #d32f2f; /* Red for Live Analysis */
+  border: 1px solid #d32f2f;
+  color: #ffffff;
+}
+
+.welcome-btn-live:hover {
+  background-color: #b71c1c;
+  border-color: #b71c1c;
+  transform: scale(1.05);
+}
+
+.welcome-btn-upload {
+  background-color: #0288d1; /* Blue for Upload */
+  border: 1px solid #0288d1;
+  color: #ffffff;
+}
+
+.welcome-btn-upload:hover {
+  background-color: #0277bd;
+  border-color: #0277bd;
   transform: scale(1.05);
 }
 
@@ -582,5 +625,43 @@ html, body, #root {
   100% {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Notification styles */
+.notification-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2000;
+}
+
+.notification {
+  background-color: #333;
+  color: #f0f0f0;
+  padding: 10px 20px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  animation: slideIn 0.5s ease-in-out, fadeOut 0.5s ease-in-out 2.5s forwards;
+}
+
+@keyframes slideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
   }
 }

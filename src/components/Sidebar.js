@@ -6,6 +6,9 @@ function Sidebar({
   handleLoadSavedAnalyses,
   handleDownloadAnalysis,
   moveAnalysis,
+  startLiveAnalysis,
+  isLiveMode,
+  stopLiveAnalysis,
 }) {
   return (
     <div className="sidebar d-flex flex-column">
@@ -29,14 +32,26 @@ function Sidebar({
       <hr style={{ borderColor: "#333", width: "80%", margin: "15px auto" }} />
 
       <div className="d-grid gap-2 mt-2">
+        {isLiveMode ? (
+          <button className="btn" onClick={stopLiveAnalysis} title="Stop Live Analysis">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f0f0f0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="6" y="4" width="4" height="16"></rect>
+              <rect x="14" y="4" width="4" height="16"></rect>
+            </svg>
+          </button>
+        ) : (
+          <button className="btn" onClick={startLiveAnalysis} title="Start Live Analysis">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f0f0f0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </button>
+        )}
         <button className="btn" onClick={handleLoadLastAnalysis} title="Load Last Analysis">
-                   
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f0f0f0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 3v6h6" />
             <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />
             <polyline points="12 7 12 12 16 14" />
           </svg>
-          
         </button>
         <button className="btn" onClick={handleLoadSavedAnalyses} title="View Saved Analyses">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f0f0f0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -31,14 +31,19 @@ function ChessLogic({
   const [isPlaying, setIsPlaying] = useState(false);
   const [intervalId, setIntervalId] = useState(null);
   const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0 });
-  const [showWelcomeScreen, setShowWelcomeScreen] = useState(!game); // Show welcome screen if no game is loaded
+  const [showWelcomeScreen, setShowWelcomeScreen] = useState(!game);
+  const [isLiveMode, setIsLiveMode] = useState(false);
+  const [liveGame, setLiveGame] = useState(null);
+  const [liveMoves, setLiveMoves] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1000);
 
   useEffect(() => {
     if (game) {
       handleAnalyzePgn();
-      setShowWelcomeScreen(false); // Hide welcome screen once a game is loaded
+      setShowWelcomeScreen(false);
     } else {
-      setShowWelcomeScreen(true); // Show welcome screen if no game is loaded
+      setShowWelcomeScreen(true);
     }
   }, [game]);
 
@@ -69,7 +74,7 @@ function ChessLogic({
 
         return nextIndex;
       });
-    }, 1000);
+    }, playbackSpeed);
 
     setIntervalId(id);
     setIsPlaying(true);
@@ -99,6 +104,9 @@ function ChessLogic({
         setAnalysis(null);
         setMoveAnalysis([]);
         setCustomArrows([]);
+        setIsLiveMode(false);
+        setLiveGame(null);
+        setLiveMoves([]);
       } catch (error) {
         setAnalysis({ error: "Failed to load PGN: " + error.message });
       }
@@ -179,16 +187,19 @@ function ChessLogic({
             move.san === "Qh5" || move.san === "Qb3"
               ? "Avoid bringing out the queen too early; develop minor pieces (e.g., Nf3 or Nc3) first."
               : `This move led to a significant disadvantage. Recommended move: ${bestMove}`;
+          addNotification(`Blunder Detected! (${move.san})`);
         } else if (scoreDiff > 1) {
           mistake = `Mistake: ${move.san} (Move ${i + 1})`;
           mistakeColor = "yellow";
           mistakes.push(mistake);
           suggestion = `This move is not optimal. A better move would be: ${bestMove}`;
+          addNotification(`Mistake Detected! (${move.san})`);
         } else if (move.san === bestMove && scoreDiff < 0.5) {
           mistake = `Excellent Move: ${move.san} (Move ${i + 1})`;
           mistakeColor = "green";
           mistakes.push(mistake);
           suggestion = "This is a very strong move!";
+          addNotification(`Excellent Move! (${move.san})`);
         }
 
         moveEvaluations.push({
@@ -263,12 +274,181 @@ function ChessLogic({
 
       localStorage.setItem("userAnalyses", JSON.stringify(allUserData));
       console.log("Analysis completed successfully!");
+      addNotification("Analysis Completed!");
     } catch (error) {
       console.error("PGN analysis failed:", error);
       setAnalysis({ error: "PGN analysis failed: " + error.message });
+      addNotification("Analysis Failed!");
     } finally {
       setIsLoading(false);
       setAnalysisProgress({ current: 0, total: 0 });
+    }
+  };
+
+  const startLiveAnalysis = () => {
+    setIsLiveMode(true);
+    const chess = new Chess();
+    setLiveGame(chess);
+    setLiveMoves([]);
+    setFen(chess.fen());
+    setAnalysis(null);
+    setMoveAnalysis([]);
+    setMoveIndex(-1);
+    setCustomArrows([]);
+    setGame(null);
+    setShowWelcomeScreen(false);
+    addNotification("Live Analysis Started!");
+  };
+
+  const stopLiveAnalysis = () => {
+    setIsLiveMode(false);
+    setLiveGame(null);
+    setLiveMoves([]);
+    setFen("start");
+    setAnalysis(null);
+    setMoveAnalysis([]);
+    setMoveIndex(-1);
+    setCustomArrows([]);
+    setShowWelcomeScreen(true);
+    addNotification("Live Analysis Stopped!");
+  };
+
+  const onPieceDrop = async (sourceSquare, targetSquare) => {
+    if (!liveGame) {
+      console.error("No live game instance available.");
+      addNotification("Live Analysis Failed: No game instance.");
+      return false;
+    }
+
+    try {
+      const move = liveGame.move({
+        from: sourceSquare,
+        to: targetSquare,
+        promotion: "q",
+      });
+
+      if (move === null) {
+        console.log("Invalid move:", sourceSquare, targetSquare);
+        return false;
+      }
+
+      const newFen = liveGame.fen();
+      setFen(newFen);
+
+      // Analyze the new position
+      console.log("Sending FEN for analysis:", newFen);
+      const response = await axios.post(
+        "http://localhost:5000/analyze",
+        { fen: newFen },
+        { timeout: 30000 }
+      );
+
+      if (!response || !response.data) {
+        throw new Error("No response from server.");
+      }
+
+      const evaluation = response.data.evaluation;
+      const bestMove = response.data.bestMove;
+
+      console.log("Analysis received:", { evaluation, bestMove });
+
+      let previousEvaluation = 0;
+      if (liveMoves.length > 0) {
+        const previousFen = liveMoves[liveMoves.length - 1].fen;
+        console.log("Sending previous FEN for analysis:", previousFen);
+        const previousResponse = await axios.post(
+          "http://localhost:5000/analyze",
+          { fen: previousFen },
+          { timeout: 30000 }
+        );
+        previousEvaluation = previousResponse.data.evaluation;
+      } else {
+        // For the first move, compare against the initial position
+        const initialFen = "rnbqkbnr/pppppppp/5n1p/8/8/5N1P/PPPPPPPP/RNBQKB1R w KQkq - 0 2";
+        console.log("Sending initial FEN for analysis:", initialFen);
+        const initialResponse = await axios.post(
+          "http://localhost:5000/analyze",
+          { fen: initialFen },
+          { timeout: 30000 }
+        );
+        previousEvaluation = initialResponse.data.evaluation;
+      }
+
+      const scoreDiff = Math.abs(previousEvaluation - evaluation);
+
+      let mistake = null;
+      let mistakeColor = null;
+      let suggestion = null;
+
+      if (scoreDiff > 2) {
+        mistake = `Blunder: ${move.san} (Move ${liveMoves.length + 1})`;
+        mistakeColor = "red";
+        suggestion =
+          move.san === "Qh5" || move.san === "Qb3"
+            ? "Avoid bringing out the queen too early; develop minor pieces (e.g., Nf3 or Nc3) first."
+            : `This move led to a significant disadvantage. Recommended move: ${bestMove}`;
+        addNotification(`Blunder Detected! (${move.san})`);
+      } else if (scoreDiff > 1) {
+        mistake = `Mistake: ${move.san} (Move ${liveMoves.length + 1})`;
+        mistakeColor = "yellow";
+        suggestion = `This move is not optimal. A better move would be: ${bestMove}`;
+        addNotification(`Mistake Detected! (${move.san})`);
+      } else if (move.san === bestMove && scoreDiff < 0.5) {
+        mistake = `Excellent Move: ${move.san} (Move ${liveMoves.length + 1})`;
+        mistakeColor = "green";
+        suggestion = "This is a very strong move!";
+        addNotification(`Excellent Move! (${move.san})`);
+      }
+
+      const newMove = {
+        fen: newFen,
+        evaluation,
+        bestMove,
+        move: move.san,
+        mistake,
+        from: move.from,
+        to: move.to,
+        mistakeColor,
+        suggestion,
+      };
+
+      // Update liveMoves and moveAnalysis in sequence
+      setLiveMoves((prev) => {
+        const updatedLiveMoves = [...prev, newMove];
+        console.log("Updated liveMoves:", updatedLiveMoves);
+
+        // Update moveAnalysis and moveIndex after liveMoves
+        setMoveAnalysis([...updatedLiveMoves]);
+        setMoveIndex(updatedLiveMoves.length - 1);
+
+        // Update analysis after moveAnalysis
+        setAnalysis({
+          evaluation,
+          bestMove,
+          accuracy: "N/A",
+          mistakes: updatedLiveMoves
+            .filter((m) => m.mistake)
+            .map((m) => m.mistake),
+        });
+
+        return updatedLiveMoves;
+      });
+
+      // Update arrows
+      if (newMove.mistake && newMove.from && newMove.to) {
+        setCustomArrows([
+          [newMove.from, newMove.to, newMove.mistakeColor || "red"],
+        ]);
+      } else {
+        setCustomArrows([]);
+      }
+
+      console.log("Live move analyzed:", newMove);
+      return true;
+    } catch (error) {
+      console.error("Live analysis failed:", error);
+      addNotification("Live Analysis Failed! Please check if the server is running.");
+      return false;
     }
   };
 
@@ -442,18 +622,35 @@ function ChessLogic({
     }
   };
 
+  const addNotification = (message) => {
+    const id = Date.now();
+    setNotifications((prev) => [...prev, { id, message }]);
+    setTimeout(() => {
+      setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+    }, 3000);
+  };
+
   return (
     <div className="container-fluid h-100 d-flex flex-column">
-      {showWelcomeScreen ? (
+      {showWelcomeScreen && !isLiveMode ? (
         <div className="welcome-screen">
           <div className="welcome-content">
             <img src="/logo.png" alt="Chess Lab Logo" className="welcome-logo" />
             <h1 className="welcome-title">Welcome to Chess Lab!</h1>
             <p className="welcome-message">
-              Upload a PGN file to start analyzing your chess games.
+              Choose a mode to start analyzing your chess games.
             </p>
-            <div className="welcome-upload">
-              <label htmlFor="welcome-pgn-upload" className="upload-btn">
+            <div className="welcome-buttons d-flex gap-3 justify-content-center">
+              <button
+                className="welcome-btn welcome-btn-live"
+                onClick={startLiveAnalysis}
+              >
+                Live Analysis
+              </button>
+              <label
+                htmlFor="welcome-pgn-upload"
+                className="welcome-btn welcome-btn-upload"
+              >
                 Upload PGN File
               </label>
               <input
@@ -468,6 +665,13 @@ function ChessLogic({
         </div>
       ) : (
         <>
+          <div className="notification-container">
+            {notifications.map((notif) => (
+              <div key={notif.id} className="notification">
+                {notif.message}
+              </div>
+            ))}
+          </div>
           <div className="row flex-grow-1">
             <div className="col-md-2 d-flex flex-column">
               <Sidebar
@@ -476,6 +680,9 @@ function ChessLogic({
                 handleLoadSavedAnalyses={handleLoadSavedAnalyses}
                 handleDownloadAnalysis={handleDownloadAnalysis}
                 moveAnalysis={moveAnalysis}
+                startLiveAnalysis={startLiveAnalysis}
+                isLiveMode={isLiveMode}
+                stopLiveAnalysis={stopLiveAnalysis}
               />
             </div>
 
@@ -490,6 +697,10 @@ function ChessLogic({
                 isPlaying={isPlaying}
                 startPlayback={startPlayback}
                 stopPlayback={stopPlayback}
+                isLiveMode={isLiveMode}
+                onPieceDrop={onPieceDrop}
+                playbackSpeed={playbackSpeed}
+                setPlaybackSpeed={setPlaybackSpeed}
               />
               {isLoading && (
                 <div className="loading-overlay">

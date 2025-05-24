@@ -11,6 +11,10 @@ function ChessBoardArea({
   isPlaying,
   startPlayback,
   stopPlayback,
+  isLiveMode,
+  onPieceDrop,
+  playbackSpeed,
+  setPlaybackSpeed,
 }) {
   return (
     <div className="chessboard-container">
@@ -32,31 +36,16 @@ function ChessBoardArea({
         }}
         lightSquareStyle={{ backgroundColor: "#f0d9b5" }}
         darkSquareStyle={{ backgroundColor: "#b58863" }}
+        onPieceDrop={isLiveMode ? onPieceDrop : undefined}
+        arePiecesDraggable={isLiveMode}
       />
-      <div className="d-flex justify-content-center gap-2 mt-3">
-        <button
-          className="control-btn"
-          onClick={handlePrevMove}
-          disabled={moveIndex === -1}
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+      {!isLiveMode && (
+        <div className="d-flex justify-content-center gap-2 mt-3">
+          <button
+            className="control-btn"
+            onClick={handlePrevMove}
+            disabled={moveIndex === -1}
           >
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
-        <button
-          className="control-btn"
-          onClick={isPlaying ? stopPlayback : startPlayback}
-        >
-          {isPlaying ? (
             <svg
               width="16"
               height="16"
@@ -67,10 +56,47 @@ function ChessBoardArea({
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <rect x="6" y="4" width="4" height="16"></rect>
-              <rect x="14" y="4" width="4" height="16"></rect>
+              <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
-          ) : (
+          </button>
+          <button
+            className="control-btn"
+            onClick={isPlaying ? stopPlayback : startPlayback}
+          >
+            {isPlaying ? (
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="6" y="4" width="4" height="16"></rect>
+                <rect x="14" y="4" width="4" height="16"></rect>
+              </svg>
+            ) : (
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+            )}
+          </button>
+          <button
+            className="control-btn"
+            onClick={handleNextMove}
+            disabled={moveIndex >= moveAnalysis.length - 1}
+          >
             <svg
               width="16"
               height="16"
@@ -81,29 +107,20 @@ function ChessBoardArea({
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              <polyline points="9 18 15 12 9 6"></polyline>
             </svg>
-          )}
-        </button>
-        <button
-          className="control-btn"
-          onClick={handleNextMove}
-          disabled={moveIndex >= moveAnalysis.length - 1}
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+          </button>
+          <select
+            className="speed-selector"
+            value={playbackSpeed}
+            onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
           >
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </button>
-      </div>
+            <option value={2000}>Slow</option>
+            <option value={1000}>Normal</option>
+            <option value={500}>Fast</option>
+          </select>
+        </div>
+      )}
     </div>
   );
 }
