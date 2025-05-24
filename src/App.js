@@ -8,7 +8,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 function App() {
   const [username, setUsername] = useState(localStorage.getItem("username") || "");
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("username"));
-  const [fen, setFen] = useState("start");
+const [fen, setFen] = useState("rnbqkbnr/pppppppp/5n1b/8/8/5N1B/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
   const [analysis, setAnalysis] = useState(null);
   const [game, setGame] = useState(null);
   const [moveIndex, setMoveIndex] = useState(-1);
