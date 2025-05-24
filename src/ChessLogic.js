@@ -30,6 +30,7 @@ function ChessLogic({
 }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [intervalId, setIntervalId] = useState(null);
+  const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0 });
 
   useEffect(() => {
     if (game) {
@@ -116,6 +117,10 @@ function ChessLogic({
       let totalScoreDiff = 0;
       let moveCount = 0;
 
+      // Initialize progress
+      setAnalysisProgress({ current: 0, total: moves.length + 1 });
+      console.log(`Starting analysis for ${moves.length} moves...`);
+
       chess.reset();
       const initialFen = chess.fen();
       const initialResponse = await axios.post(
@@ -135,6 +140,9 @@ function ChessLogic({
         suggestion: null,
       });
 
+      console.log(`Initial position evaluated: Score ${initialResponse.data.evaluation}, Best Move: ${initialResponse.data.bestMove}`);
+      setAnalysisProgress((prev) => ({ ...prev, current: 1 }));
+
       let previousEvaluation = initialResponse.data.evaluation;
 
       for (let i = 0; i < moves.length; i++) {
@@ -142,6 +150,7 @@ function ChessLogic({
         chess.move(move.san);
 
         const afterFen = chess.fen();
+        console.log(`Analyzing move ${i + 1}/${moves.length}: ${move.san}`);
         const afterResponse = await axios.post(
           "http://localhost:5000/analyze",
           { fen: afterFen },
@@ -190,6 +199,9 @@ function ChessLogic({
           mistakeColor,
           suggestion,
         });
+
+        console.log(`Move ${i + 1} evaluated: Score ${afterEvaluation}, Best Move: ${bestMove}, Score Diff: ${scoreDiff}`);
+        setAnalysisProgress((prev) => ({ ...prev, current: prev.current + 1 }));
 
         previousEvaluation = afterEvaluation;
       }
@@ -247,11 +259,13 @@ function ChessLogic({
       });
 
       localStorage.setItem("userAnalyses", JSON.stringify(allUserData));
+      console.log("Analysis completed successfully!");
     } catch (error) {
       console.error("PGN analysis failed:", error);
       setAnalysis({ error: "PGN analysis failed: " + error.message });
     } finally {
       setIsLoading(false);
+      setAnalysisProgress({ current: 0, total: 0 });
     }
   };
 
@@ -434,7 +448,9 @@ function ChessLogic({
           {isLoading && (
             <div className="loading-overlay">
               <ClipLoader color="#0d6efd" size={40} />
-              <span>Analyzing, please wait...</span>
+              <span>
+                Analyzing move {analysisProgress.current} of {analysisProgress.total}...
+              </span>
             </div>
           )}
         </div>
