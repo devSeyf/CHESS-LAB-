@@ -1,11 +1,14 @@
 import React, { useState } from "react";
 
+// Bu bileşen analiz panelini gösterir
 function AnalysisPanel({ analysis, moveIndex, moveAnalysis, handleExplainMistake, handleMoveSelect }) {
   const [showExplanation, setShowExplanation] = useState(false);
   const [explanationText, setExplanationText] = useState("");
 
+  // Şu anki hamleyi belirler
   const currentMove = moveIndex >= 0 && moveIndex < moveAnalysis.length ? moveAnalysis[moveIndex] : null;
 
+  // Açıklamayı göster/gizle işlevi
   const toggleExplanation = (move) => {
     if (showExplanation) {
       setShowExplanation(false);
@@ -21,14 +24,16 @@ function AnalysisPanel({ analysis, moveIndex, moveAnalysis, handleExplainMistake
     <div className="analysis-panel d-flex flex-column">
       <h5>Analysis</h5>
 
+      {/* Eğer analiz varsa */}
       {analysis ? (
         analysis.error ? (
+          // Hata durumu
           <div className="alert alert-danger">
             <strong>Error:</strong> {analysis.error}
           </div>
         ) : (
           <>
-            {/* Game Overview Section */}
+            {/* Oyun genel değerlendirmesi */}
             <div className="analysis-section mb-2">
               <h6 className="section-title">Game Overview</h6>
               <div className="overview-content">
@@ -61,12 +66,13 @@ function AnalysisPanel({ analysis, moveIndex, moveAnalysis, handleExplainMistake
               </div>
             </div>
 
-            {/* Move Analysis Section */}
+            {/* Seçilen hamlenin analizi */}
             {currentMove && currentMove.mistake && (
               <div className="analysis-section mb-2">
                 <h6 className="section-title">Move Analysis</h6>
                 <div className={`move-analysis-content move-${currentMove.mistakeColor}`}>
                   <div className="move-analysis-header">
+                    {/* Hata rengine göre ikon gösterimi */}
                     {currentMove.mistakeColor === "red" && (
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef5350" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M12 9v2m0 4h.01M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z" />
@@ -103,7 +109,7 @@ function AnalysisPanel({ analysis, moveIndex, moveAnalysis, handleExplainMistake
               </div>
             )}
 
-            {/* Move History Section */}
+            {/* Hamle geçmişi */}
             {moveAnalysis.length > 0 && (
               <div className="analysis-section">
                 <h6 className="section-title">Move History</h6>
@@ -159,6 +165,7 @@ function AnalysisPanel({ analysis, moveIndex, moveAnalysis, handleExplainMistake
           </>
         )
       ) : (
+        // Hiç analiz yoksa
         <p className="text-muted">No analysis available. Upload a PGN file to start.</p>
       )}
     </div>

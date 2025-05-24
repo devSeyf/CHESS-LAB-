@@ -21,7 +21,7 @@ function ChessBoardArea({
       <Chessboard
         position={fen}
         customArrows={customArrows}
-        boardWidth={450}
+        boardWidth={550}
         customSquareStyles={
           moveAnalysis[moveIndex]?.mistake
             ? {

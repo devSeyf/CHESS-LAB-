@@ -28,16 +28,23 @@ function ChessLogic({
   isLoggedIn,
   setIsLoggedIn,
 }) {
+  // Oynatma durumu - hamlelerin otomatik oynatılması
   const [isPlaying, setIsPlaying] = useState(false);
   const [intervalId, setIntervalId] = useState(null);
+  // Analiz ilerleme durumu
   const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0 });
+  // Hoşgeldiniz ekranını gösterme durumu
   const [showWelcomeScreen, setShowWelcomeScreen] = useState(!game);
+  // Canlı analiz modu durumu
   const [isLiveMode, setIsLiveMode] = useState(false);
   const [liveGame, setLiveGame] = useState(null);
   const [liveMoves, setLiveMoves] = useState([]);
+  // Bildirimler listesi
   const [notifications, setNotifications] = useState([]);
+  // Oynatma hızı (ms)
   const [playbackSpeed, setPlaybackSpeed] = useState(1000);
 
+  // Oyun değiştiğinde analiz yap veya hoşgeldiniz ekranını ayarla
   useEffect(() => {
     if (game) {
       handleAnalyzePgn();
@@ -47,6 +54,7 @@ function ChessLogic({
     }
   }, [game]);
 
+  // Hamlelerin otomatik oynatılmasını başlat
   const startPlayback = () => {
     if (isPlaying || moveIndex >= moveAnalysis.length - 1) return;
 
@@ -80,6 +88,7 @@ function ChessLogic({
     setIsPlaying(true);
   };
 
+  // Oynatmayı durdur
   const stopPlayback = () => {
     if (intervalId) {
       clearInterval(intervalId);
@@ -88,6 +97,7 @@ function ChessLogic({
     }
   };
 
+  // PGN dosyası yüklendiğinde işleme
   const handlePgnUpload = (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -114,6 +124,7 @@ function ChessLogic({
     reader.readAsText(file);
   };
 
+  // PGN analizini yap
   const handleAnalyzePgn = async () => {
     if (!game) {
       setAnalysis({ error: "No PGN game loaded" });
@@ -253,6 +264,7 @@ function ChessLogic({
         ]);
       }
 
+      // Son analizi localStorage'a kaydet
       localStorage.setItem(
         "lastAnalysis",
         JSON.stringify({
@@ -262,6 +274,7 @@ function ChessLogic({
         })
       );
 
+      // Kullanıcıya özel analizleri kaydet
       const allUserData = JSON.parse(
         localStorage.getItem("userAnalyses") || "{}"
       );
@@ -285,6 +298,7 @@ function ChessLogic({
     }
   };
 
+  // Canlı analiz başlat
   const startLiveAnalysis = () => {
     setIsLiveMode(true);
     const chess = new Chess();
@@ -300,6 +314,7 @@ function ChessLogic({
     addNotification("Live Analysis Started!");
   };
 
+  // Canlı analizi durdur
   const stopLiveAnalysis = () => {
     setIsLiveMode(false);
     setLiveGame(null);
@@ -313,6 +328,7 @@ function ChessLogic({
     addNotification("Live Analysis Stopped!");
   };
 
+  // Canlı modda taş bırakıldığında hamle yap ve analiz et
   const onPieceDrop = async (sourceSquare, targetSquare) => {
     if (!liveGame) {
       console.error("No live game instance available.");
@@ -335,7 +351,7 @@ function ChessLogic({
       const newFen = liveGame.fen();
       setFen(newFen);
 
-      // Analyze the new position
+      // Yeni pozisyonu analiz et
       console.log("Sending FEN for analysis:", newFen);
       const response = await axios.post(
         "http://localhost:5000/analyze",
@@ -363,7 +379,7 @@ function ChessLogic({
         );
         previousEvaluation = previousResponse.data.evaluation;
       } else {
-        // For the first move, compare against the initial position
+        // İlk hamle için başlangıç pozisyonunu karşılaştır
         const initialFen = "rnbqkbnr/pppppppp/5n1p/8/8/5N1P/PPPPPPPP/RNBQKB1R w KQkq - 0 2";
         console.log("Sending initial FEN for analysis:", initialFen);
         const initialResponse = await axios.post(
@@ -412,16 +428,14 @@ function ChessLogic({
         suggestion,
       };
 
-      // Update liveMoves and moveAnalysis in sequence
+      // liveMoves ve moveAnalysis güncelle
       setLiveMoves((prev) => {
         const updatedLiveMoves = [...prev, newMove];
         console.log("Updated liveMoves:", updatedLiveMoves);
 
-        // Update moveAnalysis and moveIndex after liveMoves
         setMoveAnalysis([...updatedLiveMoves]);
         setMoveIndex(updatedLiveMoves.length - 1);
 
-        // Update analysis after moveAnalysis
         setAnalysis({
           evaluation,
           bestMove,
@@ -434,7 +448,7 @@ function ChessLogic({
         return updatedLiveMoves;
       });
 
-      // Update arrows
+      // Okları güncelle
       if (newMove.mistake && newMove.from && newMove.to) {
         setCustomArrows([
           [newMove.from, newMove.to, newMove.mistakeColor || "red"],
@@ -452,6 +466,7 @@ function ChessLogic({
     }
   };
 
+  // Sonraki hamleye geç
   const handleNextMove = () => {
     if (moveIndex < moveAnalysis.length - 1) {
       const nextIndex = moveIndex + 1;
@@ -474,6 +489,7 @@ function ChessLogic({
     }
   };
 
+  // Önceki hamleye geç
   const handlePrevMove = () => {
     if (moveIndex > 0) {
       const prevIndex = moveIndex - 1;
@@ -501,6 +517,7 @@ function ChessLogic({
     }
   };
 
+  // Kaydedilmiş analizleri yükle
   const handleLoadSavedAnalyses = () => {
     const allUserData = JSON.parse(
       localStorage.getItem("userAnalyses") || "{}"
@@ -528,6 +545,7 @@ function ChessLogic({
     }
   };
 
+  // Analizi JSON olarak indir
   const handleDownloadAnalysis = () => {
     const data = {
       accuracy: analysis?.accuracy || "N/A",
@@ -545,6 +563,7 @@ function ChessLogic({
     URL.revokeObjectURL(url);
   };
 
+  // Hamledeki hatayı açıkla
   const handleExplainMistake = (move) => {
     let explanation = "";
     if (!move || !move.mistake) {
@@ -561,6 +580,7 @@ function ChessLogic({
     return explanation;
   };
 
+  // Son analizi yükle
   const handleLoadLastAnalysis = () => {
     const saved = localStorage.getItem("lastAnalysis");
 
@@ -603,6 +623,7 @@ function ChessLogic({
     }
   };
 
+  // Belirli bir hamleyi seç
   const handleMoveSelect = (index) => {
     const selectedMove = moveAnalysis[index];
     setMoveIndex(index);
@@ -622,6 +643,7 @@ function ChessLogic({
     }
   };
 
+  // Bildirim ekle
   const addNotification = (message) => {
     const id = Date.now();
     setNotifications((prev) => [...prev, { id, message }]);
@@ -632,6 +654,7 @@ function ChessLogic({
 
   return (
     <div className="container-fluid h-100 d-flex flex-column">
+      {/* Hoşgeldiniz ekranı */}
       {showWelcomeScreen && !isLiveMode ? (
         <div className="welcome-screen">
           <div className="welcome-content">
@@ -665,6 +688,7 @@ function ChessLogic({
         </div>
       ) : (
         <>
+          {/* Bildirimler */}
           <div className="notification-container">
             {notifications.map((notif) => (
               <div key={notif.id} className="notification">
@@ -673,6 +697,7 @@ function ChessLogic({
             ))}
           </div>
           <div className="row flex-grow-1">
+            {/* Yan menü */}
             <div className="col-md-2 d-flex flex-column">
               <Sidebar
                 handlePgnUpload={handlePgnUpload}
@@ -686,6 +711,7 @@ function ChessLogic({
               />
             </div>
 
+            {/* Satranç tahtası alanı */}
             <div className="col-md-5 d-flex align-items-center justify-content-center">
               <ChessBoardArea
                 fen={fen}
@@ -712,6 +738,7 @@ function ChessLogic({
               )}
             </div>
 
+            {/* Analiz paneli */}
             <div className="col-md-5 d-flex flex-column">
               <AnalysisPanel
                 analysis={analysis}

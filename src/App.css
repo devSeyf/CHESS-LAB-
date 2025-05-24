@@ -280,7 +280,7 @@ html, body, #root {
 
 /* Move History Table */
 .move-history-table {
-  max-height: 200px;
+  max-height: 300px;
   overflow-y: auto;
   border-radius: 4px;
 }
@@ -321,7 +321,7 @@ html, body, #root {
 
 .move-history-table tr.selected-move {
   background-color: #333333;
-  font-weight: 500;
+  font-weight: 950;
 }
 
 .move-history-table tr.selected-move td {
