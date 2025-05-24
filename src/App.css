@@ -117,9 +117,140 @@ html, body, #root {
   z-index: 10;
 }
 
+.analysis-panel {
+  padding: 20px;
+}
+
 .analysis-panel h5 {
   font-weight: bold;
   margin-bottom: 20px;
+  font-size: 1.2rem;
+  color: #ffffff;
+}
+
+.analysis-section {
+  background-color: #222222;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #cccccc;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #333;
+  padding-bottom: 5px;
+}
+
+.overview-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.overview-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.item-label {
+  color: #aaaaaa;
+  font-weight: 500;
+}
+
+.item-value {
+  color: #f0f0f0;
+  font-weight: 400;
+}
+
+.accuracy-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  width: 60%;
+}
+
+.accuracy-bar {
+  width: 100%;
+  height: 6px;
+  background-color: #333;
+  border-radius: 3px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+
+.accuracy-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #81c784, #4caf50);
+  transition: width 0.3s ease;
+}
+
+.move-analysis-content {
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.move-analysis-content.move-red {
+  background-color: rgba(239, 83, 80, 0.1);
+  border-left: 4px solid #ef5350;
+}
+
+.move-analysis-content.move-yellow {
+  background-color: rgba(255, 235, 59, 0.1);
+  border-left: 4px solid #ffeb3b;
+}
+
+.move-analysis-content.move-green {
+  background-color: rgba(129, 199, 132, 0.1);
+  border-left: 4px solid #81c784;
+}
+
+.move-analysis-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.move-analysis-title {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #f0f0f0;
+}
+
+.move-analysis-details {
+  font-size: 0.9rem;
+  color: #e0e0e0;
+}
+
+.move-analysis-details p {
+  margin: 0 0 8px 0;
+}
+
+.move-analysis-details strong {
+  color: #ffffff;
+}
+
+.btn-info {
+  background-color: #0288d1 !important;
+  border-color: #0288d1 !important;
+  font-size: 0.85rem !important;
+  padding: 4px 8px !important;
+}
+
+.btn-info:hover {
+  background-color: #0277bd !important;
+  border-color: #0277bd !important;
+}
+
+.text-muted {
+  color: #888 !important;
+  font-style: italic;
 }
 
 /* Chessboard */
@@ -173,6 +304,13 @@ html, body, #root {
   background-color: #2a2a2a;
   color: #f0f0f0;
   border: 1px solid #444;
+}
+
+.alert-danger {
+  background-color: rgba(239, 83, 80, 0.1) !important;
+  border: 1px solid #ef5350 !important;
+  color: #f0f0f0 !important;
+  border-radius: 6px;
 }
 
 /* Loading overlay */
