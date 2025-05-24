@@ -374,7 +374,7 @@ function ChessLogic({
     } else if (move.mistakeColor === "green") {
       explanation = "Congratulations! This is a very accurate and effective move.";
     }
-    alert(explanation);
+    return explanation;
   };
 
   const handleLoadLastAnalysis = () => {

@@ -1,7 +1,21 @@
-import React from "react";
+import React, { useState } from "react";
 
 function AnalysisPanel({ analysis, moveIndex, moveAnalysis, handleExplainMistake, handleMoveSelect }) {
+  const [showExplanation, setShowExplanation] = useState(false);
+  const [explanationText, setExplanationText] = useState("");
+
   const currentMove = moveIndex >= 0 && moveIndex < moveAnalysis.length ? moveAnalysis[moveIndex] : null;
+
+  const toggleExplanation = (move) => {
+    if (showExplanation) {
+      setShowExplanation(false);
+      setExplanationText("");
+    } else {
+      const explanation = handleExplainMistake(move);
+      setExplanationText(explanation);
+      setShowExplanation(true);
+    }
+  };
 
   return (
     <div className="analysis-panel d-flex flex-column">
@@ -73,9 +87,17 @@ function AnalysisPanel({ analysis, moveIndex, moveAnalysis, handleExplainMistake
                   </div>
                   <div className="move-analysis-details">
                     <p>{currentMove.suggestion}</p>
-                    <button className="btn btn-sm btn-info" onClick={() => handleExplainMistake(currentMove)}>
-                      Learn More
+                    <button
+                      className="btn btn-sm btn-explain"
+                      onClick={() => toggleExplanation(currentMove)}
+                    >
+                      {showExplanation ? "Hide Details" : "Learn More"}
                     </button>
+                    {showExplanation && (
+                      <div className="explanation-content">
+                        <p>{explanationText}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

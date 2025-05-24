@@ -245,16 +245,31 @@ html, body, #root {
   line-height: 1.4;
 }
 
-.btn-info {
-  background-color: #0288d1 !important;
-  border-color: #0288d1 !important;
+.btn-explain {
+  background-color: transparent !important;
+  border: 1px solid #555 !important;
+  color: #cccccc !important;
   font-size: 0.8rem !important;
-  padding: 3px 6px !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  transition: all 0.2s ease;
 }
 
-.btn-info:hover {
-  background-color: #0277bd !important;
-  border-color: #0277bd !important;
+.btn-explain:hover {
+  background-color: #2a2a2a !important;
+  border-color: #777 !important;
+  color: #ffffff !important;
+}
+
+.explanation-content {
+  margin-top: 6px;
+  padding: 6px 8px;
+  background-color: #2a2a2a;
+  border-radius: 4px;
+  border: 1px solid #333;
+  font-size: 0.85rem;
+  color: #e0e0e0;
+  line-height: 1.4;
 }
 
 .text-muted {
