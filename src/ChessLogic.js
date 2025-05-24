@@ -31,7 +31,6 @@ function ChessLogic({
   const [isPlaying, setIsPlaying] = useState(false);
   const [intervalId, setIntervalId] = useState(null);
 
-  // Automatically analyze when game changes
   useEffect(() => {
     if (game) {
       handleAnalyzePgn();
@@ -96,7 +95,7 @@ function ChessLogic({
         setMoveAnalysis([]);
         setCustomArrows([]);
       } catch (error) {
-        setAnalysis({ error: "PGN yüklenemedi: " + error.message });
+        setAnalysis({ error: "Failed to load PGN: " + error.message });
       }
     };
     reader.readAsText(file);
@@ -104,7 +103,7 @@ function ChessLogic({
 
   const handleAnalyzePgn = async () => {
     if (!game) {
-      setAnalysis({ error: "Yüklü bir PGN oyunu yok" });
+      setAnalysis({ error: "No PGN game loaded" });
       return;
     }
 
@@ -129,7 +128,7 @@ function ChessLogic({
         fen: initialFen,
         evaluation: initialResponse.data.evaluation,
         bestMove: initialResponse.data.bestMove,
-        move: "Başlangıç",
+        move: "Starting Position",
         mistake: null,
         from: null,
         to: null,
@@ -161,23 +160,23 @@ function ChessLogic({
         let suggestion = null;
 
         if (scoreDiff > 2) {
-          mistake = `?? hamlesi: ${move.san} (${i + 1}. hamle)`;
+          mistake = `Blunder: ${move.san} (Move ${i + 1})`;
           mistakeColor = "red";
           mistakes.push(mistake);
           suggestion =
             move.san === "Qh5" || move.san === "Qb3"
-              ? "Veziri çok erken çıkarmaktan kaçının, önce küçük taşları (örneğin Nf3 veya Nc3) geliştirin."
-              : `Bu hamle avantaj kaybına neden oldu. Önerilen hamle: ${bestMove}`;
+              ? "Avoid bringing out the queen too early; develop minor pieces (e.g., Nf3 or Nc3) first."
+              : `This move led to a significant disadvantage. Recommended move: ${bestMove}`;
         } else if (scoreDiff > 1) {
-          mistake = `? hamlesi: ${move.san} (${i + 1}. hamle)`;
+          mistake = `Mistake: ${move.san} (Move ${i + 1})`;
           mistakeColor = "yellow";
           mistakes.push(mistake);
-          suggestion = `Bu hamle en iyi tercih değil. Daha iyi bir hamle: ${bestMove}`;
+          suggestion = `This move is not optimal. A better move would be: ${bestMove}`;
         } else if (move.san === bestMove && scoreDiff < 0.5) {
-          mistake = `! hamlesi: ${move.san} (${i + 1}. hamle)`;
+          mistake = `Excellent Move: ${move.san} (Move ${i + 1})`;
           mistakeColor = "green";
           mistakes.push(mistake);
-          suggestion = "Çok iyi bir hamle!";
+          suggestion = "This is a very strong move!";
         }
 
         moveEvaluations.push({
@@ -249,8 +248,8 @@ function ChessLogic({
 
       localStorage.setItem("userAnalyses", JSON.stringify(allUserData));
     } catch (error) {
-      console.error("PGN analiz hatası:", error);
-      setAnalysis({ error: "PGN analizi başarısız: " + error.message });
+      console.error("PGN analysis failed:", error);
+      setAnalysis({ error: "PGN analysis failed: " + error.message });
     } finally {
       setIsLoading(false);
     }
@@ -312,7 +311,7 @@ function ChessLogic({
     const userData = allUserData[username];
 
     if (!userData || userData.length === 0) {
-      alert("Bu kullanıcıya ait kayıtlı analiz bulunamadı.");
+      alert("No saved analyses found for this user.");
       return;
     }
 
@@ -352,15 +351,15 @@ function ChessLogic({
   const handleExplainMistake = (move) => {
     let explanation = "";
     if (!move || !move.mistake) {
-      explanation = "Bu hamle hakkında özel bir açıklama bulunamadı.";
+      explanation = "No specific explanation available for this move.";
     } else if (move.mistakeColor === "red") {
       explanation =
-        "Bu ciddi bir hata. Genellikle taş kaybı, mat tehdidi ya da büyük stratejik kayıplar içerir.";
+        "This is a serious mistake. It often leads to material loss, checkmate threats, or significant strategic disadvantages.";
     } else if (move.mistakeColor === "yellow") {
       explanation =
-        "Bu hamle daha iyi bir alternatifin kaçırıldığını gösterir. Konumsal olarak ضعيف veya پاسيف olabilir.";
+        "This move missed a better alternative. It might be positionally weak or passive.";
     } else if (move.mistakeColor === "green") {
-      explanation = "Tebrikler! Bu çok doğru و etkili bir حمله.";
+      explanation = "Congratulations! This is a very accurate and effective move.";
     }
     alert(explanation);
   };
@@ -369,7 +368,7 @@ function ChessLogic({
     const saved = localStorage.getItem("lastAnalysis");
 
     if (!saved) {
-      alert("Kayıtlı analiz bulunamadı.");
+      alert("No saved analysis found.");
       return;
     }
 
@@ -377,7 +376,7 @@ function ChessLogic({
       const { fen, analysis, moveAnalysis } = JSON.parse(saved);
 
       if (!Array.isArray(moveAnalysis)) {
-        alert("Veriler bozuk görünüyor.");
+        alert("Data appears to be corrupted.");
         return;
       }
 
@@ -402,16 +401,15 @@ function ChessLogic({
         setCustomArrows([]);
       }
     } catch (error) {
-      console.error("Analiz yüklenemedi:", error);
-      alert("Veri yüklenirken hata oluştu.");
+      console.error("Failed to load analysis:", error);
+      alert("An error occurred while loading the data.");
     }
   };
 
   return (
     <div className="container-fluid h-100">
       <div className="row h-100">
-        {/* Sidebar */}
-        <div className="col-md-4 d-flex flex-column">
+        <div className="col-md-2 d-flex flex-column">
           <Sidebar
             handlePgnUpload={handlePgnUpload}
             handleLoadLastAnalysis={handleLoadLastAnalysis}
@@ -421,7 +419,6 @@ function ChessLogic({
           />
         </div>
 
-        {/* Chessboard */}
         <div className="col-md-5 d-flex align-items-center justify-content-center">
           <ChessBoardArea
             fen={fen}
@@ -437,13 +434,12 @@ function ChessLogic({
           {isLoading && (
             <div className="loading-overlay">
               <ClipLoader color="#0d6efd" size={40} />
-              <span>Analiz yapılıyor, lütfen bekleyin...</span>
+              <span>Analyzing, please wait...</span>
             </div>
           )}
         </div>
 
-        {/* Analysis */}
-        <div className="col-md-3 d-flex flex-column">
+        <div className="col-md-5 d-flex flex-column">
           <AnalysisPanel
             analysis={analysis}
             moveIndex={moveIndex}

@@ -1,4 +1,3 @@
-// components/AnalysisPanel.jsx
 import React from "react";
 
 function AnalysisPanel({ analysis, moveIndex, moveAnalysis, handleExplainMistake }) {
@@ -6,7 +5,7 @@ function AnalysisPanel({ analysis, moveIndex, moveAnalysis, handleExplainMistake
 
   return (
     <div className="analysis-panel d-flex flex-column">
-      <h5>📊 Analiz</h5>
+      <h5>Analysis</h5>
       {analysis && (
         <div className="alert alert-light border">
           {analysis.error ? (
@@ -14,19 +13,19 @@ function AnalysisPanel({ analysis, moveIndex, moveAnalysis, handleExplainMistake
           ) : (
             <>
               <ul className="list-unstyled">
-                <li><strong>Değerlendirme:</strong> {analysis.evaluation}</li>
-                <li><strong>En İyi Hamle:</strong> {analysis.bestMove}</li>
-                <li><strong>Doğruluk:</strong> {analysis.accuracy}</li>
-                <li><strong>Hatalar:</strong> {analysis.mistakes.length ? analysis.mistakes.join(", ") : "Yok"}</li>
+                <li><strong>Evaluation:</strong> {analysis.evaluation}</li>
+                <li><strong>Best Move:</strong> {analysis.bestMove}</li>
+                <li><strong>Accuracy:</strong> {analysis.accuracy}</li>
+                <li><strong>Mistakes:</strong> {analysis.mistakes.length ? analysis.mistakes.join(", ") : "None"}</li>
               </ul>
 
               {currentMove && currentMove.mistake && (
                 <>
                   <div className={`alert alert-${currentMove.mistakeColor === "red" ? "danger" : currentMove.mistakeColor === "yellow" ? "warning" : "success"}`}>
-                    <strong>⚠️ Analiz:</strong> {currentMove.mistake}<br />
-                    <strong>💡 Öneri:</strong> {currentMove.suggestion}
+                    <strong>Analysis:</strong> {currentMove.mistake}<br />
+                    <strong>Suggestion:</strong> {currentMove.suggestion}
                   </div>
-                  <button className="btn btn-sm btn-info mb-2" onClick={() => handleExplainMistake(currentMove)}>Öğren</button>
+                  <button className="btn btn-sm btn-info mb-2" onClick={() => handleExplainMistake(currentMove)}>Learn More</button>
                 </>
               )}
             </>
