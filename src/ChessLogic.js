@@ -31,10 +31,14 @@ function ChessLogic({
   const [isPlaying, setIsPlaying] = useState(false);
   const [intervalId, setIntervalId] = useState(null);
   const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0 });
+  const [showWelcomeScreen, setShowWelcomeScreen] = useState(!game); // Show welcome screen if no game is loaded
 
   useEffect(() => {
     if (game) {
       handleAnalyzePgn();
+      setShowWelcomeScreen(false); // Hide welcome screen once a game is loaded
+    } else {
+      setShowWelcomeScreen(true); // Show welcome screen if no game is loaded
     }
   }, [game]);
 
@@ -439,50 +443,80 @@ function ChessLogic({
   };
 
   return (
-    <div className="container-fluid h-100">
-      <div className="row h-100">
-        <div className="col-md-2 d-flex flex-column">
-          <Sidebar
-            handlePgnUpload={handlePgnUpload}
-            handleLoadLastAnalysis={handleLoadLastAnalysis}
-            handleLoadSavedAnalyses={handleLoadSavedAnalyses}
-            handleDownloadAnalysis={handleDownloadAnalysis}
-            moveAnalysis={moveAnalysis}
-          />
-        </div>
-
-        <div className="col-md-5 d-flex align-items-center justify-content-center">
-          <ChessBoardArea
-            fen={fen}
-            customArrows={customArrows}
-            moveAnalysis={moveAnalysis}
-            moveIndex={moveIndex}
-            handlePrevMove={handlePrevMove}
-            handleNextMove={handleNextMove}
-            isPlaying={isPlaying}
-            startPlayback={startPlayback}
-            stopPlayback={stopPlayback}
-          />
-          {isLoading && (
-            <div className="loading-overlay">
-              <ClipLoader color="#0d6efd" size={40} />
-              <span>
-                Analyzing move {analysisProgress.current} of {analysisProgress.total}...
-              </span>
+    <div className="container-fluid h-100 d-flex flex-column">
+      {showWelcomeScreen ? (
+        <div className="welcome-screen">
+          <div className="welcome-content">
+            <img src="/logo.png" alt="Chess Lab Logo" className="welcome-logo" />
+            <h1 className="welcome-title">Welcome to Chess Lab!</h1>
+            <p className="welcome-message">
+              Upload a PGN file to start analyzing your chess games.
+            </p>
+            <div className="welcome-upload">
+              <label htmlFor="welcome-pgn-upload" className="upload-btn">
+                Upload PGN File
+              </label>
+              <input
+                id="welcome-pgn-upload"
+                type="file"
+                accept=".pgn"
+                onChange={handlePgnUpload}
+                style={{ display: "none" }}
+              />
             </div>
-          )}
+          </div>
         </div>
+      ) : (
+        <>
+          <div className="row flex-grow-1">
+            <div className="col-md-2 d-flex flex-column">
+              <Sidebar
+                handlePgnUpload={handlePgnUpload}
+                handleLoadLastAnalysis={handleLoadLastAnalysis}
+                handleLoadSavedAnalyses={handleLoadSavedAnalyses}
+                handleDownloadAnalysis={handleDownloadAnalysis}
+                moveAnalysis={moveAnalysis}
+              />
+            </div>
 
-        <div className="col-md-5 d-flex flex-column">
-          <AnalysisPanel
-            analysis={analysis}
-            moveIndex={moveIndex}
-            moveAnalysis={moveAnalysis}
-            handleExplainMistake={handleExplainMistake}
-            handleMoveSelect={handleMoveSelect}
-          />
-        </div>
-      </div>
+            <div className="col-md-5 d-flex align-items-center justify-content-center">
+              <ChessBoardArea
+                fen={fen}
+                customArrows={customArrows}
+                moveAnalysis={moveAnalysis}
+                moveIndex={moveIndex}
+                handlePrevMove={handlePrevMove}
+                handleNextMove={handleNextMove}
+                isPlaying={isPlaying}
+                startPlayback={startPlayback}
+                stopPlayback={stopPlayback}
+              />
+              {isLoading && (
+                <div className="loading-overlay">
+                  <ClipLoader color="#0d6efd" size={40} />
+                  <span>
+                    Analyzing move {analysisProgress.current} of {analysisProgress.total}...
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="col-md-5 d-flex flex-column">
+              <AnalysisPanel
+                analysis={analysis}
+                moveIndex={moveIndex}
+                moveAnalysis={moveAnalysis}
+                handleExplainMistake={handleExplainMistake}
+                handleMoveSelect={handleMoveSelect}
+              />
+            </div>
+          </div>
+
+          <footer className="app-footer">
+            <p>Chess Lab | Version 1.0.0 | © 2025</p>
+          </footer>
+        </>
+      )}
     </div>
   );
 }

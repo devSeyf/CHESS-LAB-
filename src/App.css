@@ -14,7 +14,7 @@ html, body, #root {
 .analysis-panel {
   background-color: #1b1b1b;
   color: #f0f0f0;
-  height: 100vh;
+  height: 100%;
   overflow-y: hidden;
   padding: 10px;
   border-radius: 12px;
@@ -331,12 +331,57 @@ html, body, #root {
 /* Chessboard */
 .chessboard-container {
   background-color: #181818;
-  height: 100vh;
+  height: calc(100vh - 40px); /* Adjusted for footer */
   width: 100%;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   padding: 20px;
+}
+
+/* Chessboard square hover effect */
+.chessboard-container .square:hover {
+  filter: brightness(1.2);
+  transition: filter 0.2s ease;
+}
+
+/* Smooth piece movement */
+.chessboard-container .piece {
+  transition: transform 0.3s ease;
+}
+
+/* Piece animations */
+.square-pulse {
+  animation: pulse 0.4s ease-in-out;
+  box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.3);
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.3);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 6px rgba(33, 150, 243, 0.5);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.3);
+  }
+}
+
+@keyframes pieceShake {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(2px, -2px); }
+  50% { transform: translate(-2px, 2px); }
+  75% { transform: translate(2px, 2px); }
+  100% { transform: translate(0, 0); }
+}
+
+.square-shake {
+  animation: pieceShake 0.3s ease-in-out;
 }
 
 /* Buttons */
@@ -419,39 +464,6 @@ html, body, #root {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Piece animations */
-.square-pulse {
-  animation: pulse 0.4s ease-in-out;
-  box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.3);
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.3);
-  }
-  50% {
-    transform: scale(1.05);
-    box-shadow: 0 0 0 6px rgba(33, 150, 243, 0.5);
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.3);
-  }
-}
-
-@keyframes pieceShake {
-  0% { transform: translate(0, 0); }
-  25% { transform: translate(2px, -2px); }
-  50% { transform: translate(-2px, 2px); }
-  75% { transform: translate(2px, 2px); }
-  100% { transform: translate(0, 0); }
-}
-
-.square-shake {
-  animation: pieceShake 0.3s ease-in-out;
-}
-
 /* Upload button */
 .upload-btn {
   display: inline-block;
@@ -491,4 +503,84 @@ html, body, #root {
   font-size: 0.9rem;
   margin-bottom: 4px;
   text-align: center;
+}
+
+/* Footer */
+.app-footer {
+  background-color: #1b1b1b;
+  color: #888;
+  text-align: center;
+  padding: 8px 0;
+  font-size: 0.85rem;
+  border-top: 1px solid #333;
+  width: 100%;
+}
+
+/* Welcome Screen */
+.welcome-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #1b1b1b 0%, #2a2a2a 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.welcome-content {
+  text-align: center;
+  animation: fadeIn 1s ease-in-out;
+}
+
+.welcome-logo {
+  width: 150px;
+  margin-bottom: 20px;
+  animation: fadeIn 1.5s ease-in-out;
+}
+
+.welcome-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 15px;
+  animation: fadeIn 2s ease-in-out;
+}
+
+.welcome-message {
+  font-size: 1.2rem;
+  color: #cccccc;
+  margin-bottom: 30px;
+  animation: fadeIn 2.5s ease-in-out;
+}
+
+.welcome-upload .upload-btn {
+  max-width: 250px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  background-color: #2a2a2a;
+  border-color: #2a2a2a;
+  color: #ffffff;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  animation: fadeIn 3s ease-in-out;
+}
+
+.welcome-upload .upload-btn:hover {
+  background-color: #3a3a3a;
+  border-color: #3a3a3a;
+  transform: scale(1.05);
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
