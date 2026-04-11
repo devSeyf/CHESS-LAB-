@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { Chessboard } from "react-chessboard";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Chess } from "chess.js";
 import { ClipLoader } from "react-spinners";
+import { IoArrowBack } from "react-icons/io5";
+
+import { verboseMoveToUci, STANDARD_START_FEN } from "./chessUtils";
 
 import Sidebar from "../src/components/Sidebar";
 import ChessBoardArea from "../src/components/ChessBoardArea";
@@ -37,22 +40,33 @@ function ChessLogic({
   const [showWelcomeScreen, setShowWelcomeScreen] = useState(!game);
   // Canlı analiz modu durumu
   const [isLiveMode, setIsLiveMode] = useState(false);
-  const [liveGame, setLiveGame] = useState(null);
-  const [liveMoves, setLiveMoves] = useState([]);
   // Bildirimler listesi
   const [notifications, setNotifications] = useState([]);
   // Oynatma hızı (ms)
   const [playbackSpeed, setPlaybackSpeed] = useState(1000);
+
+  /** Live game must use a ref so async analysis never sees a stale Chess instance. */
+  const liveGameRef = useRef(null);
+  /** Engine evaluation of the current live position (after each successful /analyze). Used for mistake deltas. */
+  const lastLiveEvaluationRef = useRef(null);
+  /** Monotonically increases; drop stale axios responses when the user moves again. */
+  const liveAnalysisRequestIdRef = useRef(0);
+  /** True while a live /analyze request is in flight OR initial live eval is loading — blocks drops to prevent board/engine desync. */
+  const liveAnalysisBusyRef = useRef(false);
+
+  const navigate = useNavigate();
 
   // Oyun değiştiğinde analiz yap veya hoşgeldiniz ekranını ayarla
   useEffect(() => {
     if (game) {
       handleAnalyzePgn();
       setShowWelcomeScreen(false);
-    } else {
+    } else if (!isLiveMode) {
       setShowWelcomeScreen(true);
     }
-  }, [game]);
+    // Intentionally omit handleAnalyzePgn: only re-run when a new PGN is loaded (`game` reference).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game, isLiveMode]);
 
   // Hamlelerin otomatik oynatılmasını başlat
   const startPlayback = () => {
@@ -115,8 +129,7 @@ function ChessLogic({
         setMoveAnalysis([]);
         setCustomArrows([]);
         setIsLiveMode(false);
-        setLiveGame(null);
-        setLiveMoves([]);
+        liveGameRef.current = null;
       } catch (error) {
         setAnalysis({ error: "Failed to load PGN: " + error.message });
       }
@@ -243,7 +256,7 @@ function ChessLogic({
 
       setMoveAnalysis(moveEvaluations);
       setMoveIndex(1);
-      setFen(moveEvaluations[1]?.fen || "start");
+      setFen(moveEvaluations[1]?.fen || STANDARD_START_FEN);
       const firstMove = moveEvaluations[1];
       if (firstMove?.mistake && firstMove.from && firstMove.to) {
         setCustomArrows([
@@ -298,12 +311,13 @@ function ChessLogic({
     }
   };
 
-  // Canlı analiz başlat
-  const startLiveAnalysis = () => {
+  // Canlı analiz başlat — engine eval for start position loads before play (avoids wrong mistake math + ref init).
+  const startLiveAnalysis = async () => {
+    liveAnalysisRequestIdRef.current += 1;
+    const sessionId = liveAnalysisRequestIdRef.current;
     setIsLiveMode(true);
     const chess = new Chess();
-    setLiveGame(chess);
-    setLiveMoves([]);
+    liveGameRef.current = chess;
     setFen(chess.fen());
     setAnalysis(null);
     setMoveAnalysis([]);
@@ -311,93 +325,122 @@ function ChessLogic({
     setCustomArrows([]);
     setGame(null);
     setShowWelcomeScreen(false);
+    lastLiveEvaluationRef.current = null;
+    liveAnalysisBusyRef.current = true;
+    setIsLoading(true);
+
+    try {
+      const res = await axios.post(
+        "http://localhost:5000/analyze",
+        { fen: chess.fen() },
+        { timeout: 30000 }
+      );
+      if (sessionId !== liveAnalysisRequestIdRef.current) return;
+      lastLiveEvaluationRef.current = res.data.evaluation;
+      setAnalysis({
+        evaluation: res.data.evaluation,
+        bestMove: res.data.bestMove,
+        accuracy: "N/A",
+        mistakes: [],
+      });
+    } catch (e) {
+      console.error("Live start position analysis failed:", e);
+      addNotification("Could not analyze start position — check server.");
+      setAnalysis({ error: "Start position analysis failed: " + (e.message || "unknown") });
+    } finally {
+      if (sessionId === liveAnalysisRequestIdRef.current) {
+        liveAnalysisBusyRef.current = false;
+        setIsLoading(false);
+      }
+    }
     addNotification("Live Analysis Started!");
   };
 
   // Canlı analizi durdur
   const stopLiveAnalysis = () => {
+    liveAnalysisRequestIdRef.current += 1;
     setIsLiveMode(false);
-    setLiveGame(null);
-    setLiveMoves([]);
-    setFen("start");
+    liveGameRef.current = null;
+    lastLiveEvaluationRef.current = null;
+    liveAnalysisBusyRef.current = false;
+    setFen(STANDARD_START_FEN);
     setAnalysis(null);
     setMoveAnalysis([]);
     setMoveIndex(-1);
     setCustomArrows([]);
     setShowWelcomeScreen(true);
+    setIsLoading(false);
     addNotification("Live Analysis Stopped!");
   };
 
-  // Canlı modda taş bırakıldığında hamle yap ve analiz et
+  // Canlı modda taş bırakıldığında: chess.js hamlesi (tek kaynak), sonra FEN ile tek /analyze.
+  // chess.js v1+ throws Error("Invalid move: ...") for illegal moves — never let it propagate.
   const onPieceDrop = async (sourceSquare, targetSquare) => {
-    if (!liveGame) {
-      console.error("No live game instance available.");
-      addNotification("Live Analysis Failed: No game instance.");
+    const game = liveGameRef.current;
+    if (!game || !isLiveMode) {
+      return false;
+    }
+    if (liveAnalysisBusyRef.current) {
       return false;
     }
 
+    let move;
     try {
-      const move = liveGame.move({
+      move = game.move({
         from: sourceSquare,
         to: targetSquare,
         promotion: "q",
       });
+    } catch {
+      addNotification("Illegal move — not allowed.");
+      return false;
+    }
 
-      if (move === null) {
-        console.log("Invalid move:", sourceSquare, targetSquare);
-        return false;
-      }
+    if (move === null) {
+      addNotification("Illegal move — not allowed.");
+      return false;
+    }
 
-      const newFen = liveGame.fen();
-      setFen(newFen);
+    const newFen = game.fen();
+    setFen(newFen);
 
-      // Yeni pozisyonu analiz et
-      console.log("Sending FEN for analysis:", newFen);
+    const requestId = ++liveAnalysisRequestIdRef.current;
+    liveAnalysisBusyRef.current = true;
+    setIsLoading(true);
+
+    const prevEval = lastLiveEvaluationRef.current;
+    const moveNumber = game.history().length;
+
+    try {
       const response = await axios.post(
         "http://localhost:5000/analyze",
         { fen: newFen },
         { timeout: 30000 }
       );
 
-      if (!response || !response.data) {
+      if (requestId !== liveAnalysisRequestIdRef.current) {
+        return true;
+      }
+
+      if (!response?.data) {
         throw new Error("No response from server.");
       }
 
       const evaluation = response.data.evaluation;
       const bestMove = response.data.bestMove;
-
-      console.log("Analysis received:", { evaluation, bestMove });
-
-      let previousEvaluation = 0;
-      if (liveMoves.length > 0) {
-        const previousFen = liveMoves[liveMoves.length - 1].fen;
-        console.log("Sending previous FEN for analysis:", previousFen);
-        const previousResponse = await axios.post(
-          "http://localhost:5000/analyze",
-          { fen: previousFen },
-          { timeout: 30000 }
-        );
-        previousEvaluation = previousResponse.data.evaluation;
-      } else {
-        // İlk hamle için başlangıç pozisyonunu karşılaştır
-        const initialFen = "rnbqkbnr/pppppppp/5n1p/8/8/5N1P/PPPPPPPP/RNBQKB1R w KQkq - 0 2";
-        console.log("Sending initial FEN for analysis:", initialFen);
-        const initialResponse = await axios.post(
-          "http://localhost:5000/analyze",
-          { fen: initialFen },
-          { timeout: 30000 }
-        );
-        previousEvaluation = initialResponse.data.evaluation;
-      }
-
+      const previousEvaluation =
+        typeof prevEval === "number" ? prevEval : evaluation;
       const scoreDiff = Math.abs(previousEvaluation - evaluation);
 
       let mistake = null;
       let mistakeColor = null;
       let suggestion = null;
 
+      const bestUci = (bestMove || "").toLowerCase();
+      const playedUci = verboseMoveToUci(move).toLowerCase();
+
       if (scoreDiff > 2) {
-        mistake = `Blunder: ${move.san} (Move ${liveMoves.length + 1})`;
+        mistake = `Blunder: ${move.san} (Move ${moveNumber})`;
         mistakeColor = "red";
         suggestion =
           move.san === "Qh5" || move.san === "Qb3"
@@ -405,12 +448,12 @@ function ChessLogic({
             : `This move led to a significant disadvantage. Recommended move: ${bestMove}`;
         addNotification(`Blunder Detected! (${move.san})`);
       } else if (scoreDiff > 1) {
-        mistake = `Mistake: ${move.san} (Move ${liveMoves.length + 1})`;
+        mistake = `Mistake: ${move.san} (Move ${moveNumber})`;
         mistakeColor = "yellow";
         suggestion = `This move is not optimal. A better move would be: ${bestMove}`;
         addNotification(`Mistake Detected! (${move.san})`);
-      } else if (move.san === bestMove && scoreDiff < 0.5) {
-        mistake = `Excellent Move: ${move.san} (Move ${liveMoves.length + 1})`;
+      } else if (playedUci && bestUci && playedUci === bestUci && scoreDiff < 0.5) {
+        mistake = `Excellent Move: ${move.san} (Move ${moveNumber})`;
         mistakeColor = "green";
         suggestion = "This is a very strong move!";
         addNotification(`Excellent Move! (${move.san})`);
@@ -428,27 +471,20 @@ function ChessLogic({
         suggestion,
       };
 
-      // liveMoves ve moveAnalysis güncelle
-      setLiveMoves((prev) => {
-        const updatedLiveMoves = [...prev, newMove];
-        console.log("Updated liveMoves:", updatedLiveMoves);
+      lastLiveEvaluationRef.current = evaluation;
 
-        setMoveAnalysis([...updatedLiveMoves]);
-        setMoveIndex(updatedLiveMoves.length - 1);
-
+      setMoveAnalysis((prev) => {
+        const next = [...prev, newMove];
+        setMoveIndex(next.length - 1);
         setAnalysis({
           evaluation,
           bestMove,
           accuracy: "N/A",
-          mistakes: updatedLiveMoves
-            .filter((m) => m.mistake)
-            .map((m) => m.mistake),
+          mistakes: next.filter((m) => m.mistake).map((m) => m.mistake),
         });
-
-        return updatedLiveMoves;
+        return next;
       });
 
-      // Okları güncelle
       if (newMove.mistake && newMove.from && newMove.to) {
         setCustomArrows([
           [newMove.from, newMove.to, newMove.mistakeColor || "red"],
@@ -457,12 +493,22 @@ function ChessLogic({
         setCustomArrows([]);
       }
 
-      console.log("Live move analyzed:", newMove);
       return true;
     } catch (error) {
       console.error("Live analysis failed:", error);
       addNotification("Live Analysis Failed! Please check if the server is running.");
+      try {
+        game.undo();
+        setFen(game.fen());
+      } catch (undoErr) {
+        console.warn("Could not undo after failed analysis:", undoErr);
+      }
       return false;
+    } finally {
+      if (requestId === liveAnalysisRequestIdRef.current) {
+        liveAnalysisBusyRef.current = false;
+        setIsLoading(false);
+      }
     }
   };
 
@@ -511,7 +557,7 @@ function ChessLogic({
       }
     } else if (moveIndex === 0) {
       setMoveIndex(-1);
-      setFen("start");
+      setFen(STANDARD_START_FEN);
       setAnalysis(null);
       setCustomArrows([]);
     }
@@ -597,7 +643,7 @@ function ChessLogic({
         return;
       }
 
-      setFen(fen || "start");
+      setFen(fen || STANDARD_START_FEN);
       setAnalysis(analysis || null);
       setMoveAnalysis(moveAnalysis);
       setGame(null);
@@ -652,11 +698,43 @@ function ChessLogic({
     }, 3000);
   };
 
+  const handleBack = () => {
+    if (showWelcomeScreen && !isLiveMode) {
+      if (window.history.length > 1) {
+        navigate(-1);
+      }
+      return;
+    }
+    stopPlayback();
+    if (isLiveMode) {
+      stopLiveAnalysis();
+      return;
+    }
+    setShowWelcomeScreen(true);
+    setGame(null);
+    setFen(STANDARD_START_FEN);
+    setAnalysis(null);
+    setMoveAnalysis([]);
+    setMoveIndex(-1);
+    setCustomArrows([]);
+  };
+
   return (
-    <div className="container-fluid h-100 d-flex flex-column">
+    <div className="container-fluid chess-lab-root h-100 d-flex flex-column px-0">
       {/* Hoşgeldiniz ekranı */}
       {showWelcomeScreen && !isLiveMode ? (
         <div className="welcome-screen">
+          {typeof window !== "undefined" && window.history.length > 1 && (
+            <button
+              type="button"
+              className="welcome-back-btn"
+              onClick={() => navigate(-1)}
+              aria-label="Go back"
+            >
+              <IoArrowBack aria-hidden size={22} />
+              <span>Back</span>
+            </button>
+          )}
           <div className="welcome-content">
             <img src="/logo.png" alt="Chess Lab Logo" className="welcome-logo" />
             <h1 className="welcome-title">Welcome to Chess Lab!</h1>
@@ -696,9 +774,27 @@ function ChessLogic({
               </div>
             ))}
           </div>
-          <div className="row flex-grow-1">
-            {/* Yan menü */}
-            <div className="col-md-2 d-flex flex-column">
+
+          <header className="lab-header">
+            <button
+              type="button"
+              className="lab-back-btn"
+              onClick={handleBack}
+              aria-label="Go back"
+            >
+              <IoArrowBack aria-hidden size={22} />
+              <span>Back</span>
+            </button>
+            <div className="lab-header-title">
+              <span className="lab-header-brand">Chess Lab</span>
+              <span className="lab-header-sub">
+                {isLiveMode ? "Live analysis" : game ? "PGN review" : "Analysis"}
+              </span>
+            </div>
+          </header>
+
+          <div className="lab-main-grid">
+            <aside className="lab-sidebar-col">
               <Sidebar
                 handlePgnUpload={handlePgnUpload}
                 handleLoadLastAnalysis={handleLoadLastAnalysis}
@@ -709,49 +805,54 @@ function ChessLogic({
                 isLiveMode={isLiveMode}
                 stopLiveAnalysis={stopLiveAnalysis}
               />
-            </div>
+            </aside>
 
-            {/* Satranç tahtası alanı */}
-            <div className="col-md-5 d-flex align-items-center justify-content-center">
-              <ChessBoardArea
-                fen={fen}
-                customArrows={customArrows}
-                moveAnalysis={moveAnalysis}
-                moveIndex={moveIndex}
-                handlePrevMove={handlePrevMove}
-                handleNextMove={handleNextMove}
-                isPlaying={isPlaying}
-                startPlayback={startPlayback}
-                stopPlayback={stopPlayback}
-                isLiveMode={isLiveMode}
-                onPieceDrop={onPieceDrop}
-                playbackSpeed={playbackSpeed}
-                setPlaybackSpeed={setPlaybackSpeed}
-              />
-              {isLoading && (
-                <div className="loading-overlay">
-                  <ClipLoader color="#0d6efd" size={40} />
-                  <span>
-                    Analyzing move {analysisProgress.current} of {analysisProgress.total}...
-                  </span>
-                </div>
-              )}
-            </div>
+            <main className="lab-board-col">
+              <div className="lab-board-wrap">
+                <ChessBoardArea
+                  fen={fen}
+                  customArrows={customArrows}
+                  moveAnalysis={moveAnalysis}
+                  moveIndex={moveIndex}
+                  handlePrevMove={handlePrevMove}
+                  handleNextMove={handleNextMove}
+                  isPlaying={isPlaying}
+                  startPlayback={startPlayback}
+                  stopPlayback={stopPlayback}
+                  isLiveMode={isLiveMode}
+                  onPieceDrop={onPieceDrop}
+                  playbackSpeed={playbackSpeed}
+                  setPlaybackSpeed={setPlaybackSpeed}
+                  isLoading={isLoading}
+                />
+                {isLoading && (
+                  <div className="loading-overlay loading-overlay--board">
+                    <ClipLoader color="#7eb8ff" size={40} />
+                    <span>
+                      {analysisProgress.total > 0
+                        ? `Analyzing move ${analysisProgress.current} of ${analysisProgress.total}…`
+                        : "Analyzing position…"}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </main>
 
-            {/* Analiz paneli */}
-            <div className="col-md-5 d-flex flex-column">
+            <section className="lab-analysis-col">
               <AnalysisPanel
                 analysis={analysis}
                 moveIndex={moveIndex}
                 moveAnalysis={moveAnalysis}
                 handleExplainMistake={handleExplainMistake}
                 handleMoveSelect={handleMoveSelect}
+                isLoading={isLoading}
+                isLiveMode={isLiveMode}
               />
-            </div>
+            </section>
           </div>
 
           <footer className="app-footer">
-            <p>Chess Lab | Version 1.0.0 | © 2025</p>
+            <p>Chess Lab | Version 1.0.0 | © 2026</p>
           </footer>
         </>
       )}

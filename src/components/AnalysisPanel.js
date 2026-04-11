@@ -1,7 +1,15 @@
 import React, { useState } from "react";
 
 // Bu bileşen analiz panelini gösterir
-function AnalysisPanel({ analysis, moveIndex, moveAnalysis, handleExplainMistake, handleMoveSelect }) {
+function AnalysisPanel({
+  analysis,
+  moveIndex,
+  moveAnalysis,
+  handleExplainMistake,
+  handleMoveSelect,
+  isLoading,
+  isLiveMode,
+}) {
   const [showExplanation, setShowExplanation] = useState(false);
   const [explanationText, setExplanationText] = useState("");
 
@@ -20,9 +28,24 @@ function AnalysisPanel({ analysis, moveIndex, moveAnalysis, handleExplainMistake
     }
   };
 
+  const accuracyBarWidth =
+    analysis &&
+    !analysis.error &&
+    typeof analysis.accuracy === "string" &&
+    analysis.accuracy.endsWith("%") &&
+    analysis.accuracy !== "N/A"
+      ? analysis.accuracy
+      : "0%";
+
   return (
     <div className="analysis-panel d-flex flex-column">
       <h5>Analysis</h5>
+
+      {isLiveMode && isLoading && (
+        <p className="text-info small mb-2" role="status">
+          Waiting for engine…
+        </p>
+      )}
 
       {/* Eğer analiz varsa */}
       {analysis ? (
@@ -52,7 +75,7 @@ function AnalysisPanel({ analysis, moveIndex, moveAnalysis, handleExplainMistake
                     <div className="accuracy-bar">
                       <div
                         className="accuracy-fill"
-                        style={{ width: analysis.accuracy }}
+                        style={{ width: accuracyBarWidth }}
                       ></div>
                     </div>
                   </div>
@@ -165,8 +188,11 @@ function AnalysisPanel({ analysis, moveIndex, moveAnalysis, handleExplainMistake
           </>
         )
       ) : (
-        // Hiç analiz yoksa
-        <p className="text-muted">No analysis available. Upload a PGN file to start.</p>
+        <p className="text-muted">
+          {isLiveMode && isLoading
+            ? "Preparing live engine…"
+            : "No analysis available. Upload a PGN or start Live Analysis."}
+        </p>
       )}
     </div>
   );

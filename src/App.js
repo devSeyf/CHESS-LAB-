@@ -1,9 +1,9 @@
 // App.js
 import React, { useState } from "react";
-import { Chessboard } from "react-chessboard"; // Satranç tahtası bileşeni
 import "./App.css";
 import ChessLogic from "./ChessLogic"; // Satranç mantığını yöneten bileşen
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { STANDARD_START_FEN } from "./chessUtils";
 
 function App() {
   // Kullanıcı adı state'i, localStorage'dan yükleniyor
@@ -11,8 +11,8 @@ function App() {
   // Giriş durumu (true/false)
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("username"));
   
-  // Satranç tahtasının FEN durumu (başlangıç pozisyonu örnek olarak)
-  const [fen, setFen] = useState("rnbqkbnr/pppppppp/5n1b/8/8/5N1B/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+  // Satranç tahtasının FEN durumu — standard start (must match chess.js default / live mode)
+  const [fen, setFen] = useState(STANDARD_START_FEN);
   
   // Analiz verisi (null veya analiz objesi)
   const [analysis, setAnalysis] = useState(null);

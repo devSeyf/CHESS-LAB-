@@ -1,5 +1,20 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Chessboard } from "react-chessboard";
+
+function useBoardWidth() {
+  const [boardWidth, setBoardWidth] = useState(520);
+  useEffect(() => {
+    const compute = () => {
+      const vw = typeof window !== "undefined" ? window.innerWidth : 1024;
+      const next = Math.min(560, Math.max(260, vw - 48));
+      setBoardWidth(next);
+    };
+    compute();
+    window.addEventListener("resize", compute);
+    return () => window.removeEventListener("resize", compute);
+  }, []);
+  return boardWidth;
+}
 
 function ChessBoardArea({
   fen,
@@ -15,13 +30,16 @@ function ChessBoardArea({
   onPieceDrop,
   playbackSpeed,
   setPlaybackSpeed,
+  isLoading,
 }) {
+  const boardWidth = useBoardWidth();
+
   return (
     <div className="chessboard-container">
       <Chessboard
         position={fen}
         customArrows={customArrows}
-        boardWidth={550}
+        boardWidth={boardWidth}
         customSquareStyles={
           moveAnalysis[moveIndex]?.mistake
             ? {
@@ -37,7 +55,7 @@ function ChessBoardArea({
         lightSquareStyle={{ backgroundColor: "#f0d9b5" }}
         darkSquareStyle={{ backgroundColor: "#b58863" }}
         onPieceDrop={isLiveMode ? onPieceDrop : undefined}
-        arePiecesDraggable={isLiveMode}
+        arePiecesDraggable={isLiveMode && !isLoading}
       />
       {!isLiveMode && (
         <div className="d-flex justify-content-center gap-2 mt-3">

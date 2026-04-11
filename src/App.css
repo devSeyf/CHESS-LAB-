@@ -1,24 +1,31 @@
 /* Page background and text */
 html, body, #root {
-  height: 100%;
+  min-height: 100%;
   margin: 0;
   padding: 0;
-  font-family: 'Segoe UI', sans-serif;
-  background-color: #131111;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background-color: #0e0d0d;
   color: #f0f0f0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.chess-lab-root {
+  min-height: 100vh;
+  max-width: 100vw;
 }
 
 /* Sidebar and Analysis Panel */
 .sidebar,
 .analysis-panel {
-  background-color: #1b1b1b;
+  background-color: #1a1a1a;
   color: #f0f0f0;
-  height: 100%;
-  overflow-y: hidden;
-  padding: 10px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 14px;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  border: 1px solid #2a2a2a;
 }
 
 .sidebar {
@@ -280,9 +287,11 @@ html, body, #root {
 
 /* Move History Table */
 .move-history-table {
-  max-height: 300px;
+  max-height: min(42vh, 360px);
   overflow-y: auto;
-  border-radius: 4px;
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #2e2e2e;
 }
 
 .move-history-table table {
@@ -330,14 +339,15 @@ html, body, #root {
 
 /* Chessboard */
 .chessboard-container {
-  background-color: #181818;
-  height: calc(100vh - 40px); /* Adjusted for footer */
+  background: linear-gradient(180deg, #1c1c1c 0%, #141414 100%);
   width: 100%;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 20px;
+  padding: clamp(12px, 3vw, 24px);
+  box-sizing: border-box;
 }
 
 /* Chessboard square hover effect */
@@ -458,15 +468,24 @@ html, body, #root {
   left: 0;
   width: 100vw;
   height: 100vh;
-  backdrop-filter: blur(5px);
-  background-color: rgba(19, 17, 17, 0.8);
+  backdrop-filter: blur(6px);
+  background-color: rgba(10, 10, 10, 0.82);
   z-index: 9999;
   display: flex;
   justify-content: center;
   align-items: center;
   flex-direction: column;
-  border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.loading-overlay--board {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  border-radius: 12px;
+  z-index: 20;
 }
 
 .loading-overlay span {
@@ -663,5 +682,217 @@ html, body, #root {
   }
   100% {
     opacity: 0;
+  }
+}
+
+/* —— Main lab layout (responsive) —— */
+.lab-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+  padding: 10px 16px;
+  background: linear-gradient(180deg, #1e1e1e 0%, #161616 100%);
+  border-bottom: 1px solid #2c2c2c;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+}
+
+.lab-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #e8e8e8;
+  background: #252525;
+  border: 1px solid #3d3d3d;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+
+.lab-back-btn:hover {
+  background: #2f2f2f;
+  border-color: #5a8fd8;
+  color: #fff;
+}
+
+.lab-back-btn:active {
+  transform: scale(0.98);
+}
+
+.lab-header-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.lab-header-brand {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #f5f5f5;
+}
+
+.lab-header-sub {
+  font-size: 0.78rem;
+  color: #8a8a8a;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.lab-main-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(88px, 112px) minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: clamp(10px, 2vw, 20px);
+  padding: 12px 16px 16px;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.lab-sidebar-col,
+.lab-board-col,
+.lab-analysis-col {
+  min-width: 0;
+  min-height: 0;
+}
+
+.lab-board-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.lab-board-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-height: min(72vw, 560px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.lab-analysis-col {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 120px);
+}
+
+.lab-analysis-col .analysis-panel {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 1199px) {
+  .lab-main-grid {
+    grid-template-columns: minmax(80px, 100px) minmax(0, 1fr) minmax(0, 0.95fr);
+    gap: 12px;
+    padding: 10px 12px 14px;
+  }
+}
+
+@media (max-width: 991px) {
+  .lab-main-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "board"
+      "analysis"
+      "sidebar";
+    max-height: none;
+  }
+
+  .lab-sidebar-col {
+    grid-area: sidebar;
+  }
+
+  .lab-board-col {
+    grid-area: board;
+  }
+
+  .lab-analysis-col {
+    grid-area: analysis;
+    max-height: none;
+  }
+
+  .lab-analysis-col .analysis-panel {
+    max-height: min(55vh, 520px);
+  }
+
+  .sidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .sidebar h4 {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  .sidebar .btn {
+    max-width: 48px;
+    margin-bottom: 0;
+  }
+
+  .fen-pgn-box {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 576px) {
+  .lab-header {
+    padding: 8px 12px;
+  }
+
+  .lab-back-btn span {
+    display: none;
+  }
+
+  .lab-back-btn {
+    padding: 10px 12px;
+  }
+
+  .lab-main-grid {
+    padding: 8px 10px 12px;
+    gap: 10px;
+  }
+}
+
+/* Welcome screen back */
+.welcome-back-btn {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 1001;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: 0.95rem;
+  color: #e8e8e8;
+  background: rgba(30, 30, 30, 0.92);
+  border: 1px solid #3d3d3d;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.welcome-back-btn:hover {
+  background: #2a2a2a;
+  border-color: #5a8fd8;
+}
+
+@media (max-width: 576px) {
+  .welcome-back-btn span {
+    display: none;
   }
 }
